@@ -1,0 +1,11 @@
+plugins {
+    id "com.android.application" version "9.2.1" apply false
+}
+
+// The project lives in an iCloud-synced folder; iCloud spawns "* 2" duplicate files inside build
+// outputs, which breaks dexing ("Type ... is defined multiple times"). Keep all build outputs in
+// the unsynced user cache instead: ~/Library/Caches/ZTV-build/<project>.
+def externalBuildRoot = new File(System.getProperty("user.home"), "Library/Caches/ZTV-build")
+allprojects {
+    layout.buildDirectory = new File(externalBuildRoot, project.name)
+}

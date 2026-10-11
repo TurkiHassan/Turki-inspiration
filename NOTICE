@@ -1,0 +1,19 @@
+Third-party notices
+
+IPTVnator
+  The workspace UI, navigation and screen layouts are a native Android port
+  inspired by IPTVnator by 4gray: https://github.com/4gray/iptvnator
+  IPTVnator is licensed under the MIT License.
+
+DM Sans
+  app/src/main/assets/fonts/DMSans-*.ttf, app/src/main/res/font/dm_sans_*.ttf
+  Copyright The DM Sans Project Authors. SIL Open Font License, Version 1.1.
+  https://github.com/googlefonts/dm-fonts
+
+Material Icons
+  app/src/main/assets/fonts/MaterialIcons-Regular.*
+  Copyright Google LLC. Apache License, Version 2.0.
+  https://github.com/google/material-design-icons
+
+AndroidX / Media3 and other Gradle dependencies are distributed under their
+own licenses (mostly Apache License 2.0) and are fetched at build time.

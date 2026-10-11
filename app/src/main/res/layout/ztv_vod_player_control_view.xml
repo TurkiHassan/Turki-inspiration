@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <View
+        android:id="@id/exo_controls_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/ztv_player_controls_scrim" />
+
+    <LinearLayout
+        android:id="@id/exo_center_controls"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_gravity="center"
+        android:importantForAccessibility="no"
+        android:orientation="horizontal"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@id/exo_bottom_bar"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/ztv_player_controls_panel"
+        android:layoutDirection="ltr"
+        android:orientation="vertical"
+        android:gravity="bottom"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp">
+
+        <TextView
+            android:id="@+id/ztv_player_bar_meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/dm_sans_semibold"
+            android:letterSpacing="0.12"
+            android:singleLine="true"
+            android:textColor="#FF6B7384"
+            android:textSize="8.25dp" />
+
+        <TextView
+            android:id="@+id/ztv_player_bar_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/dm_sans_semibold"
+            android:singleLine="true"
+            android:text="ZTV"
+            android:textColor="#FFE7ECF3"
+            android:textSize="16.5dp" />
+
+        <LinearLayout
+            android:id="@id/exo_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
+            android:importantForAccessibility="noHideDescendants"
+            android:layoutDirection="ltr"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@id/exo_position"
+                style="@style/ExoStyledControls.TimeText.Position"
+                android:fontFamily="@font/dm_sans_medium"
+                android:minWidth="48dp"
+                android:textColor="#FFE7ECF3"
+                android:textSize="9.75dp" />
+
+            <androidx.media3.ui.DefaultTimeBar
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:id="@id/exo_progress"
+                android:layout_width="0dp"
+                android:layout_height="26dp"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:layout_weight="1"
+                app:bar_height="3dp"
+                app:buffered_color="#59FFFFFF"
+                app:played_color="#FF3474E8"
+                app:scrubber_color="#FFFFFFFF"
+                app:scrubber_enabled_size="9dp"
+                app:unplayed_color="#2EFFFFFF" />
+
+            <TextView
+                android:id="@id/exo_duration"
+                style="@style/ExoStyledControls.TimeText.Duration"
+                android:fontFamily="@font/dm_sans_medium"
+                android:minWidth="48dp"
+                android:textColor="#FF9AA3B5"
+                android:textSize="9.75dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@id/exo_basic_controls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:layoutDirection="ltr"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@id/exo_rew_with_amount"
+                style="@style/ExoStyledControls.Button.Center.RewWithAmount"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/ztv_player_icon_button_selector"
+                android:focusable="true"
+                android:minWidth="44dp"
+                android:minHeight="44dp"
+                android:textSize="8dp"
+                android:singleLine="false"
+                android:textColor="#FFFFFFFF" />
+
+            <ImageButton
+                android:id="@id/exo_play_pause"
+                style="@style/ExoStyledControls.Button.Center.PlayPause"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="14dp"
+                android:background="@drawable/ztv_player_primary_button_selector"
+                android:focusable="true"
+                android:minWidth="40dp"
+                android:minHeight="40dp"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:tint="#FFFFFFFF" />
+
+            <Button
+                android:id="@id/exo_ffwd_with_amount"
+                style="@style/ExoStyledControls.Button.Center.FfwdWithAmount"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/ztv_player_icon_button_selector"
+                android:focusable="true"
+                android:minWidth="44dp"
+                android:minHeight="44dp"
+                android:textSize="8dp"
+                android:singleLine="false"
+                android:textColor="#FFFFFFFF" />
+
+            <ImageButton
+                android:id="@+id/ztv_next_episode"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/ztv_player_icon_button_selector"
+                android:contentDescription="Next episode"
+                android:focusable="true"
+                android:padding="9dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_next_episode_24"
+                android:tint="#FFFFFFFF" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:id="@id/exo_subtitle"
+                style="@style/ExoStyledControls.Button.Bottom.CC"
+                android:background="@drawable/ztv_player_icon_button_selector"
+                android:minWidth="40dp"
+                android:minHeight="40dp" />
+
+            <ImageButton
+                android:id="@id/exo_settings"
+                style="@style/ExoStyledControls.Button.Bottom.Settings"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/ztv_player_icon_button_selector"
+                android:minWidth="40dp"
+                android:minHeight="40dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+</merge>

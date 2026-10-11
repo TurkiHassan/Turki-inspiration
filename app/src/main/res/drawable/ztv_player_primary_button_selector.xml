@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The dock's play/pause disc: accent blue with a soft 4px halo; focus = 2px player-text ring. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="oval">
+            <solid android:color="#FF4F8EFF" />
+            <stroke android:width="2dp" android:color="#FFE7ECF3" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape android:shape="oval">
+            <solid android:color="#FF4F8EFF" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#FF3474E8" />
+            <stroke android:width="3dp" android:color="#2E4F8EFF" />
+        </shape>
+    </item>
+</selector>
