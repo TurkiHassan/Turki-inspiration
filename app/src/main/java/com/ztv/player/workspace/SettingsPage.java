@@ -11,9 +11,11 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import com.ztv.player.AudioDelayPolicy;
 import com.ztv.player.BuildConfig;
 import com.ztv.player.data.BackupManager;
 import com.ztv.player.data.ServerAddressPolicy;
+import com.ztv.player.data.SettingsStore;
 import com.ztv.player.data.XtreamContentType;
 
 import java.io.BufferedReader;
@@ -23,6 +25,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
@@ -217,6 +220,25 @@ public final class SettingsPage extends Page {
                 LinearLayout player = card(page, "Player");
                 toggleRow(player, "Auto-play next episode", "When an episode ends, the next one in the season starts automatically.",
                         host.settings.autoPlayNextEpisode(), value -> host.settings.setAutoPlayNextEpisode(value));
+                toggleRow(player, "Match frame rate", "Switch the TV refresh rate to the video's (e.g. 50 Hz for sports) for smoother motion. Some TVs blank briefly when it switches.",
+                        host.settings.matchFrameRate(), value -> host.settings.setMatchFrameRate(value));
+                toggleRow(player, "Stay close to live", "After a live channel stalls, play slightly faster until it catches back up to live.",
+                        host.settings.stayNearLive(), value -> host.settings.setStayNearLive(value));
+                toggleRow(player, "Tunneled playback", "Let the TV hardware keep audio and video in sync. Turn off if you get a black screen or no sound.",
+                        host.settings.tunneledPlayback(), value -> host.settings.setTunneledPlayback(value));
+                segmentedRow(player, "Live buffer", "Large waits a little longer to start but stalls less on weak connections.",
+                        new String[]{SettingsStore.LIVE_BUFFER_NORMAL, SettingsStore.LIVE_BUFFER_LARGE},
+                        new String[]{"speed", "storage"},
+                        host.settings.liveBuffer(), value -> host.settings.setLiveBuffer(value));
+                segmentedRow(player, "Audio decoder", "FFmpeg decodes audio in software. Try it if a channel has no sound or crackles.",
+                        new String[]{SettingsStore.AUDIO_DECODER_DEVICE, SettingsStore.AUDIO_DECODER_FFMPEG},
+                        new String[]{"memory", "graphic_eq"},
+                        host.settings.audioDecoder(), value -> host.settings.setAudioDecoder(value));
+                String[] delayIcons = new String[AudioDelayPolicy.OPTIONS.length];
+                Arrays.fill(delayIcons, "sync");
+                segmentedRow(player, "Audio delay (ms)", "Shift the sound if it is out of sync with the picture. Positive plays audio later.",
+                        AudioDelayPolicy.OPTIONS, delayIcons, AudioDelayPolicy.label(host.settings.audioDelayMs()),
+                        value -> host.settings.setAudioDelayMs(AudioDelayPolicy.parse(value)));
                 segmentedRow(player, "Recently viewed size", "How many channels and titles Recently viewed keeps per type.",
                         new String[]{"10", "15", "30"}, new String[]{"history", "history", "history"},
                         String.valueOf(host.settings.recentChannelsCount()), value -> host.settings.setRecentChannelsCount(Integer.parseInt(value)));

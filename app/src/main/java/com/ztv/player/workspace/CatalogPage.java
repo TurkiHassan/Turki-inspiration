@@ -14,7 +14,9 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.leanback.widget.OnChildViewHolderSelectedListener;
 import androidx.leanback.widget.VerticalGridView;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.ztv.player.data.XtreamContentType;
 import com.ztv.player.data.XtreamMediaItem;
@@ -95,6 +97,8 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
     private TextView sortChipLabel;
     private TextView ratingChip;
     private int columns = 5;
+    private int lastCategoryPosition;
+    private int lastGridPosition;
 
     // Live layout
     private LinearLayout liveLayout;
@@ -107,6 +111,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
     private boolean panelsCollapsed;
     private View restoreButton;
     private XtreamMediaItem playingChannel;
+    private int lastChannelPosition;
 
     public CatalogPage(WorkspaceActivity host, XtreamContentType type) {
         super(host);
@@ -186,9 +191,17 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
     @Override
     public void onDestroy() {
         host.catalog.removeListener(this);
-        if (inlinePlayer != null) {
-            inlinePlayer.release();
-        }
+        releaseInlinePlayback();
+    }
+
+    @Override
+    public void onPlaybackStarting() {
+        releaseInlinePlayback();
+    }
+
+    @Override
+    public void onHostStopped() {
+        releaseInlinePlayback();
     }
 
     @Override
@@ -198,6 +211,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         }
         if (inlinePlayer != null && playingChannel != null) {
             inlinePlayer.play(host.streamUrl(playingChannel));
+            focusChannelList();
         }
     }
 
@@ -312,6 +326,29 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         Nator.pad(categoryList, 8, 0, 8, 12);
         categoryList.setAdapter(categoryAdapter);
         categoryList.setWindowAlignmentOffsetPercent(40f);
+        categoryList.setOnChildViewHolderSelectedListener(new OnChildViewHolderSelectedListener() {
+            @Override
+            public void onChildViewHolderSelected(RecyclerView parent, RecyclerView.ViewHolder child,
+                                                  int position, int subposition) {
+                if (position >= 0) {
+                    lastCategoryPosition = position;
+                }
+            }
+        });
+        categoryList.setOnKeyInterceptListener(event -> {
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                rememberCategoryPosition();
+                if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                    focusContentFromCategory();
+                    return true;
+                }
+                if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
+                    focusRail();
+                    return true;
+                }
+            }
+            return Widgets.escapeEdge(categoryList, event, 1, false);
+        });
         panelBody.addView(categoryList, new FrameLayout.LayoutParams(-1, -1));
         if (!showingData) {
             panelBody.addView(Widgets.categorySkeleton(context, 16), new FrameLayout.LayoutParams(-1, -1));
@@ -384,13 +421,14 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
     }
 
     private void onCategoryPicked(CategoryAdapter.Row row, int position) {
+        lastCategoryPosition = position;
         // OK on the selected category returns to "All items".
         selectedKey = row.key.equals(selectedKey) ? null : row.key;
         categoryAdapter.setSelectedKey(selectedKey);
         host.updateSearchScope(this);
         renderContent(true);
         if (type == XtreamContentType.LIVE && selectedKey != null && channelList != null) {
-            channelList.post(() -> channelList.requestFocus());
+            focusChannelList();
         }
     }
 
@@ -569,7 +607,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         }
         gridAdapter.setShowTitles(host.prefs.bool(SettingsPage.PREF_SHOW_TITLES, true) || !query.isEmpty());
         gridAdapter.setItems(items);
-        Widgets.gridKeys(grid, columns, () -> categoryList.requestFocus());
+        Widgets.gridKeys(grid, columns, this::focusCategoryList);
         emptyView.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
         if (resetScroll && !items.isEmpty()) {
             grid.setSelectedPosition(0);
@@ -643,6 +681,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         gridAdapter = new PosterGridAdapter(context, PosterGridAdapter.Style.GRID, width, new PosterGridAdapter.Listener() {
             @Override
             public void onOpen(XtreamMediaItem item, int position) {
+                lastGridPosition = position;
                 if (item.type() == XtreamContentType.LIVE) {
                     openChannelFromGrid(item);
                 } else {
@@ -666,6 +705,15 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         }
         grid = Widgets.verticalGrid(context, columns, live ? 16 : 16, gap());
         grid.setAdapter(gridAdapter);
+        grid.setOnChildViewHolderSelectedListener(new OnChildViewHolderSelectedListener() {
+            @Override
+            public void onChildViewHolderSelected(RecyclerView parent, RecyclerView.ViewHolder child,
+                                                  int position, int subposition) {
+                if (position >= 0) {
+                    lastGridPosition = position;
+                }
+            }
+        });
         Nator.pad(grid, 20, live ? 17 : 16, 20, 24);
         FrameLayout gridFrame = new FrameLayout(context);
         gridFrame.setClipChildren(false);
@@ -785,6 +833,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
                 new ChannelRowAdapter.Listener() {
                     @Override
                     public void onChannel(XtreamMediaItem item, int position) {
+                        lastChannelPosition = position;
                         if (playingChannel != null && playingChannel.id() == item.id()) {
                             host.play(item, channelAdapter.items());
                         } else {
@@ -807,6 +856,15 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         channelList.setAdapter(channelAdapter);
         Nator.pad(channelList, 0, 1, 0, 12);
         channelList.setWindowAlignmentOffsetPercent(40f);
+        channelList.setOnChildViewHolderSelectedListener(new OnChildViewHolderSelectedListener() {
+            @Override
+            public void onChildViewHolderSelected(RecyclerView parent, RecyclerView.ViewHolder child,
+                                                  int position, int subposition) {
+                if (position >= 0) {
+                    lastChannelPosition = position;
+                }
+            }
+        });
         // ArrowLeft from a channel returns to the selected category.
         channelList.setOnKeyInterceptListener(event -> {
             if (Widgets.escapeEdge(channelList, event, 1, false)) {
@@ -814,7 +872,13 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
             }
             if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT
                     && !panelsCollapsed && categoryList != null) {
-                categoryList.requestFocus();
+                rememberChannelPosition();
+                focusCategoryList();
+                return true;
+            }
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                rememberChannelPosition();
+                focusInlinePreview();
                 return true;
             }
             return false;
@@ -828,6 +892,21 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
 
         FrameLayout playerArea = new FrameLayout(context);
         inlinePlayer = new InlinePlayer(context);
+        inlinePlayer.setOnKeyListener((v, keyCode, event) -> {
+            if (event.getAction() != KeyEvent.ACTION_DOWN) {
+                return false;
+            }
+            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+                focusChannelList();
+                return true;
+            }
+            if ((keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)
+                    && playingChannel != null) {
+                host.play(playingChannel, channelAdapter.items());
+                return true;
+            }
+            return false;
+        });
         playerArea.addView(inlinePlayer, new FrameLayout.LayoutParams(-1, -1));
         LinearLayout idle = Widgets.emptyState(context, "live_tv", "Select a channel", "Press OK on a channel to start watching. Press OK again for full screen.");
         idle.setTag("idle");
@@ -894,7 +973,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
             restoreButton.setVisibility(View.GONE);
         }
         if (channelList != null) {
-            channelList.requestFocus();
+            focusChannelList();
         }
     }
 
@@ -903,9 +982,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
             if (panelsCollapsed) {
                 expandPanels();
             }
-            if (inlinePlayer != null) {
-                inlinePlayer.release();
-            }
+            releaseInlinePlayback();
             playingChannel = null;
             View idle = liveLayout.findViewWithTag("idle");
             if (idle != null) {
@@ -915,14 +992,16 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         }
     }
 
+    /** Releases the preview rather than pausing it so it cannot keep audio alive in background. */
+    private void releaseInlinePlayback() {
+        if (inlinePlayer != null) {
+            inlinePlayer.release();
+        }
+    }
+
     @Override
     public void focusFromRail() {
-        if (categoryList != null && panel != null && ((View) panel.getParent()).getVisibility() == View.VISIBLE
-                && categoryAdapter.getItemCount() > 0) {
-            categoryList.requestFocus();
-        } else {
-            requestInitialFocus();
-        }
+        focusCategoryList();
     }
 
     @Override
@@ -932,14 +1011,83 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
             return true;
         }
         if (type == XtreamContentType.LIVE && selectedKey != null && channelList != null && channelList.hasFocus()) {
-            categoryList.requestFocus();
+            focusCategoryList();
             return true;
         }
         if (grid != null && grid.hasFocus() && categoryList != null) {
-            categoryList.requestFocus();
+            focusCategoryList();
             return true;
         }
         return false;
+    }
+
+    /** Explicit TV focus graph: rail ⇄ categories ⇄ content/channels ⇄ live preview. */
+    private void focusContentFromCategory() {
+        if (type == XtreamContentType.LIVE && selectedKey != null && channelList != null) {
+            focusChannelList();
+        } else {
+            focusGrid();
+        }
+    }
+
+    private void focusCategoryList() {
+        if (categoryList == null || categoryAdapter == null || categoryAdapter.getItemCount() == 0
+                || panel == null || panel.getParent() == null || ((View) panel.getParent()).getVisibility() != View.VISIBLE) {
+            requestInitialFocus();
+            return;
+        }
+        int selected = categoryAdapter.indexOf(selectedKey);
+        int target = selected >= 0 ? selected : boundedPosition(lastCategoryPosition, categoryAdapter.getItemCount());
+        categoryList.setSelectedPosition(target);
+        categoryList.post(categoryList::requestFocus);
+    }
+
+    private void focusGrid() {
+        if (grid == null || gridAdapter == null || gridAdapter.getItemCount() == 0) {
+            return;
+        }
+        grid.setSelectedPosition(boundedPosition(lastGridPosition, gridAdapter.getItemCount()));
+        grid.post(grid::requestFocus);
+    }
+
+    private void focusChannelList() {
+        if (channelList == null || channelAdapter == null || channelAdapter.getItemCount() == 0) {
+            focusCategoryList();
+            return;
+        }
+        int playing = playingChannel == null ? -1 : channelAdapter.indexOf(playingChannel.id());
+        int target = playing >= 0 ? playing : boundedPosition(lastChannelPosition, channelAdapter.getItemCount());
+        channelList.setSelectedPosition(target);
+        channelList.post(channelList::requestFocus);
+    }
+
+    private void focusInlinePreview() {
+        if (inlinePlayer != null) {
+            inlinePlayer.requestFocus();
+        }
+    }
+
+    private void focusRail() {
+        View rail = host.railButton(section());
+        if (rail != null) {
+            rail.requestFocus();
+        }
+    }
+
+    private void rememberCategoryPosition() {
+        if (categoryList != null && categoryList.getSelectedPosition() >= 0) {
+            lastCategoryPosition = categoryList.getSelectedPosition();
+        }
+    }
+
+    private void rememberChannelPosition() {
+        if (channelList != null && channelList.getSelectedPosition() >= 0) {
+            lastChannelPosition = channelList.getSelectedPosition();
+        }
+    }
+
+    private static int boundedPosition(int position, int itemCount) {
+        return Math.max(0, Math.min(position, itemCount - 1));
     }
 
     @Override

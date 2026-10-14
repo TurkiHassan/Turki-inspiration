@@ -3,6 +3,7 @@ package com.ztv.player;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,6 +24,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
@@ -30,6 +32,7 @@ import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.ui.PlayerView;
 
@@ -37,6 +40,8 @@ import com.ztv.player.data.SettingsStore;
 import com.ztv.player.data.EpisodePlaybackQueue;
 import com.ztv.player.data.HostFailoverPolicy;
 import com.ztv.player.data.HistoryStore;
+import com.ztv.player.data.HttpStatusResolver;
+import com.ztv.player.data.PlaybackFailurePolicy;
 import com.ztv.player.data.ServerConfigStore;
 import com.ztv.player.data.XtreamApiClient;
 import com.ztv.player.data.XtreamContentType;
@@ -82,9 +87,30 @@ public final class PlayerActivity extends Activity {
     public static final String EXTRA_NEXT_EPISODE_QUEUE = "com.ztv.player.NEXT_EPISODE_QUEUE";
     public static final String EXTRA_CHANNEL_LIST = "com.ztv.player.CHANNEL_LIST";
 
-    private static final int MAX_RETRIES_PER_HOST = 2;
+    private static final int MAX_RETRIES_PER_HOST = 1;
+    private static final long RETRY_DELAY_MS = 2000L;
+    private static final long LIVE_EDGE_CHECK_MS = 1000L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private long liveEdgeStopMs = LiveEdgePolicy.CATCH_UP_STOP_MS;
+    private final Runnable liveEdgeTick = new Runnable() {
+        @Override
+        public void run() {
+            if (player == null) {
+                return;
+            }
+            // Streams with a known live offset (HLS) are already kept near live by ExoPlayer.
+            if (player.getCurrentLiveOffset() == C.TIME_UNSET) {
+                float current = player.getPlaybackParameters().speed;
+                float next = LiveEdgePolicy.nextSpeed(player.isPlaying(),
+                        player.getTotalBufferedDuration(), current, liveEdgeStopMs);
+                if (next != current) {
+                    player.setPlaybackSpeed(next);
+                }
+            }
+            handler.postDelayed(this, LIVE_EDGE_CHECK_MS);
+        }
+    };
     private XtreamApiClient apiClient;
     private ServerConfigStore serverConfigStore;
     private ExoPlayer player;
@@ -92,6 +118,7 @@ public final class PlayerActivity extends Activity {
     private ProgressBar progress;
     private LinearLayout errorBox;
     private TextView errorText;
+    private TextView errorHeadline;
     private TextView epgText;
     private TextView titleText;
     private View liveInfoOverlay;
@@ -199,10 +226,13 @@ public final class PlayerActivity extends Activity {
         setContentView(root);
         showLiveInfoTemporarily();
 
-        ExoPlayer.Builder playerBuilder = new ExoPlayer.Builder(this)
+        ExoPlayer.Builder playerBuilder = new ExoPlayer.Builder(this, PlayerRenderers.create(this,
+                        SettingsStore.AUDIO_DECODER_FFMPEG.equals(settingsStore.audioDecoder()),
+                        settingsStore.audioDelayMs()))
                 .setSeekBackIncrementMs(PlayerControlsPolicy.seekBackIncrementMs())
                 .setSeekForwardIncrementMs(PlayerControlsPolicy.seekForwardIncrementMs())
                 .setLoadControl(buildLoadControl())
+                .setTrackSelector(buildTrackSelector())
                 .setMediaSourceFactory(buildMediaSourceFactory());
         player = playerBuilder.build();
         player.addListener(new Player.Listener() {
@@ -233,9 +263,16 @@ public final class PlayerActivity extends Activity {
                 handlePlaybackError(error);
             }
         });
+        if (settingsStore.matchFrameRate()) {
+            player.setVideoFrameMetadataListener(new FrameRateWatcher(handler, new DisplayModeSwitcher(this)));
+        }
         playerView.setPlayer(player);
 
         startPlayback();
+        if (isLiveStream() && settingsStore.stayNearLive()) {
+            liveEdgeStopMs = LiveEdgePolicy.stopThresholdMs(bufferConfig());
+            handler.postDelayed(liveEdgeTick, LIVE_EDGE_CHECK_MS);
+        }
         playerView.requestFocus();
         handler.postDelayed(this::loadEpgOnce, 4000);
     }
@@ -313,6 +350,15 @@ public final class PlayerActivity extends Activity {
         errorBox.setVisibility(View.GONE);
 
         errorBox.setBackgroundColor(0xB3000000);
+
+        // Viewer-facing headline in Arabic. The bundled DM Sans face has no Arabic glyphs, so this
+        // line uses the system font, which shapes Arabic correctly on every Android TV build.
+        errorHeadline = com.ztv.player.workspace.Nator.text(this, "", 16.8f,
+                com.ztv.player.workspace.Nator.W600, com.ztv.player.workspace.Nator.PLAYER_TEXT);
+        errorHeadline.setTypeface(Typeface.DEFAULT);
+        errorHeadline.setGravity(Gravity.CENTER);
+        errorHeadline.setVisibility(View.GONE);
+
         errorText = com.ztv.player.workspace.Nator.text(this, "This stream could not be played", 16.8f,
                 com.ztv.player.workspace.Nator.W500, com.ztv.player.workspace.Nator.PLAYER_TEXT);
         errorText.setGravity(Gravity.CENTER);
@@ -340,7 +386,8 @@ public final class PlayerActivity extends Activity {
             startPlayback();
         });
 
-        errorBox.addView(errorText, ZtvUi.wrapTop(0));
+        errorBox.addView(errorHeadline, ZtvUi.wrapTop(0));
+        errorBox.addView(errorText, ZtvUi.wrapTop(8));
         errorBox.addView(retry, ZtvUi.fixedTop(this, 120, 40, 20));
         return errorBox;
     }
@@ -624,9 +671,10 @@ public final class PlayerActivity extends Activity {
         if (player == null) {
             return;
         }
-        if (retryCount < MAX_RETRIES_PER_HOST) {
+        int httpStatus = HttpStatusResolver.responseCode(error);
+        boolean providerRejection = PlaybackFailurePolicy.isProviderRejection(httpStatus);
+        if (PlaybackFailurePolicy.shouldRetry(providerRejection, retryCount, MAX_RETRIES_PER_HOST)) {
             retryCount++;
-            long delayMs = 1500L * retryCount;
             errorText.setText("Reconnecting (" + retryCount + "/" + MAX_RETRIES_PER_HOST + ")...");
             showProgress(true);
             handler.postDelayed(() -> {
@@ -634,18 +682,39 @@ public final class PlayerActivity extends Activity {
                     player.prepare();
                     player.play();
                 }
-            }, delayMs);
-        } else if (HostFailoverPolicy.shouldFailOverPlaybackError(error.errorCode)
+            }, RETRY_DELAY_MS);
+            return;
+        }
+        if (PlaybackFailurePolicy.shouldFailOver(providerRejection, error.errorCode)
                 && selectNextPlaybackHost()) {
             retryCount = 0;
             errorText.setText("Switching to a backup server...");
             showProgress(true);
             handler.postDelayed(this::startPlayback, 600L);
-        } else {
-            showProgress(false);
-            errorText.setText("Stream unavailable. No owner-managed server could play it.");
-            showError();
+            return;
         }
+        showProgress(false);
+        showPlaybackFailure(httpStatus);
+    }
+
+    /**
+     * Reports the real cause instead of a generic message: when the provider answered with an HTTP
+     * status, the stream is refused (or missing) on the provider side, which the viewer cannot fix
+     * from this screen.
+     */
+    private void showPlaybackFailure(int httpStatus) {
+        boolean providerAnswered = httpStatus >= 400;
+        if (errorHeadline != null) {
+            errorHeadline.setText(providerAnswered
+                    ? "تعذّر تشغيل هذا العنوان — المزوّد ردّ بـ " + httpStatus
+                    : "تعذّر تشغيل هذا العنوان");
+            errorHeadline.setVisibility(View.VISIBLE);
+        }
+        errorText.setText(providerAnswered
+                ? "The provider refused this stream (HTTP " + httpStatus
+                        + "). This title is unavailable on the provider side."
+                : "Stream unavailable. No owner-managed server could play it.");
+        showError();
     }
 
     private boolean selectNextPlaybackHost() {
@@ -816,9 +885,26 @@ public final class PlayerActivity extends Activity {
         return new DefaultMediaSourceFactory(new DefaultDataSource.Factory(this, httpFactory));
     }
 
+    /**
+     * Tunneled playback hands audio/video sync to the TV hardware. ExoPlayer only engages it when
+     * both the video decoder and the audio path support it (not with the FFmpeg audio decoder),
+     * and otherwise plays normally, so the setting is safe to leave on for unsupported streams.
+     */
+    private DefaultTrackSelector buildTrackSelector() {
+        DefaultTrackSelector trackSelector = new DefaultTrackSelector(this);
+        if (settingsStore.tunneledPlayback()) {
+            trackSelector.setParameters(trackSelector.buildUponParameters().setTunnelingEnabled(true));
+        }
+        return trackSelector;
+    }
+
+    private PlaybackBufferPolicy.BufferConfig bufferConfig() {
+        return PlaybackBufferPolicy.configFor(getIntent().getStringExtra(EXTRA_MEDIA_TYPE),
+                SettingsStore.LIVE_BUFFER_LARGE.equals(settingsStore.liveBuffer()));
+    }
+
     private DefaultLoadControl buildLoadControl() {
-        PlaybackBufferPolicy.BufferConfig config = PlaybackBufferPolicy.configFor(
-                getIntent().getStringExtra(EXTRA_MEDIA_TYPE));
+        PlaybackBufferPolicy.BufferConfig config = bufferConfig();
         DefaultLoadControl.Builder builder = new DefaultLoadControl.Builder()
                 .setBufferDurationsMs(
                         config.minBufferMs(),

@@ -22,6 +22,12 @@ public final class SettingsStore {
     private static final String KEY_HIGH_CONTRAST_FOCUS = "high_contrast_focus";
     private static final String KEY_PLAYBACK_QUALITY = "playback_quality";
     private static final String KEY_ASPECT_RATIO = "aspect_ratio";
+    private static final String KEY_MATCH_FRAME_RATE = "match_frame_rate";
+    private static final String KEY_STAY_NEAR_LIVE = "stay_near_live";
+    private static final String KEY_TUNNELED_PLAYBACK = "tunneled_playback";
+    private static final String KEY_LIVE_BUFFER = "live_buffer";
+    private static final String KEY_AUDIO_DECODER = "audio_decoder";
+    private static final String KEY_AUDIO_DELAY_MS = "audio_delay_ms";
     private static final String KEY_HIDDEN_SECTIONS_PREFIX = "hidden_sections_";
     private static final String KEY_DETAIL_ORDER = "detail_button_order";
     private static final String KEY_DETAIL_HIDDEN = "detail_hidden_buttons";
@@ -29,6 +35,10 @@ public final class SettingsStore {
     public static final int DEFAULT_RECENT_COUNT = 15;
     public static final String QUALITY_AUTO = "Auto";
     public static final String ASPECT_FIT = "Fit";
+    public static final String LIVE_BUFFER_NORMAL = "Normal";
+    public static final String LIVE_BUFFER_LARGE = "Large";
+    public static final String AUDIO_DECODER_DEVICE = "Device";
+    public static final String AUDIO_DECODER_FFMPEG = "FFmpeg";
     public static final String BUTTON_PLAY = "PLAY";
     public static final String BUTTON_FAVORITE = "FAVORITE";
     public static final String BUTTON_EXTERNAL = "EXTERNAL";
@@ -105,6 +115,60 @@ public final class SettingsStore {
     public void setAspectRatio(String aspectRatio) {
         preferences.edit().putString(KEY_ASPECT_RATIO,
                 aspectRatio == null || aspectRatio.trim().isEmpty() ? ASPECT_FIT : aspectRatio.trim()).apply();
+    }
+
+    /** Off by default: switching the display mode blanks some TVs for a second or two. */
+    public boolean matchFrameRate() {
+        return preferences.getBoolean(KEY_MATCH_FRAME_RATE, false);
+    }
+
+    public void setMatchFrameRate(boolean enabled) {
+        preferences.edit().putBoolean(KEY_MATCH_FRAME_RATE, enabled).apply();
+    }
+
+    public boolean stayNearLive() {
+        return preferences.getBoolean(KEY_STAY_NEAR_LIVE, true);
+    }
+
+    public void setStayNearLive(boolean enabled) {
+        preferences.edit().putBoolean(KEY_STAY_NEAR_LIVE, enabled).apply();
+    }
+
+    /** Off by default: some TV boxes show a black screen or lose audio with tunneling. */
+    public boolean tunneledPlayback() {
+        return preferences.getBoolean(KEY_TUNNELED_PLAYBACK, false);
+    }
+
+    public void setTunneledPlayback(boolean enabled) {
+        preferences.edit().putBoolean(KEY_TUNNELED_PLAYBACK, enabled).apply();
+    }
+
+    public String liveBuffer() {
+        return LIVE_BUFFER_LARGE.equals(preferences.getString(KEY_LIVE_BUFFER, LIVE_BUFFER_NORMAL))
+                ? LIVE_BUFFER_LARGE : LIVE_BUFFER_NORMAL;
+    }
+
+    public void setLiveBuffer(String size) {
+        preferences.edit().putString(KEY_LIVE_BUFFER,
+                LIVE_BUFFER_LARGE.equals(size) ? LIVE_BUFFER_LARGE : LIVE_BUFFER_NORMAL).apply();
+    }
+
+    public String audioDecoder() {
+        return AUDIO_DECODER_FFMPEG.equals(preferences.getString(KEY_AUDIO_DECODER, AUDIO_DECODER_DEVICE))
+                ? AUDIO_DECODER_FFMPEG : AUDIO_DECODER_DEVICE;
+    }
+
+    public void setAudioDecoder(String decoder) {
+        preferences.edit().putString(KEY_AUDIO_DECODER,
+                AUDIO_DECODER_FFMPEG.equals(decoder) ? AUDIO_DECODER_FFMPEG : AUDIO_DECODER_DEVICE).apply();
+    }
+
+    public int audioDelayMs() {
+        return preferences.getInt(KEY_AUDIO_DELAY_MS, 0);
+    }
+
+    public void setAudioDelayMs(int delayMs) {
+        preferences.edit().putInt(KEY_AUDIO_DELAY_MS, delayMs).apply();
     }
 
     public boolean isSectionHidden(XtreamContentType type, String sectionTitle) {

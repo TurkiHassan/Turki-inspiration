@@ -154,6 +154,15 @@ public final class WorkspaceActivity extends Activity {
     }
 
     @Override
+    protected void onStop() {
+        Page page = top();
+        if (page != null) {
+            page.onHostStopped();
+        }
+        super.onStop();
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         Page page = top();
@@ -424,6 +433,12 @@ public final class WorkspaceActivity extends Activity {
     public void play(XtreamMediaItem item, List<XtreamMediaItem> siblingsOrEpisodes) {
         if (!hasSource()) {
             return;
+        }
+        // The embedded live preview owns a separate ExoPlayer. Release it before handing
+        // playback to the full-screen activity so the two players never overlap in audio.
+        Page page = top();
+        if (page != null) {
+            page.onPlaybackStarting();
         }
         history.record(item);
         Intent intent = new Intent(this, PlayerActivity.class);

@@ -13,6 +13,17 @@ public final class PlaybackBufferPolicy {
             false
     );
 
+    /** For weak or bursty connections: waits longer before starting, rides out longer gaps. */
+    private static final BufferConfig LIVE_LARGE = new BufferConfig(
+            6000,
+            20000,
+            2500,
+            4000,
+            0,
+            true,
+            false
+    );
+
     private static final BufferConfig VOD = new BufferConfig(
             20000,
             60000,
@@ -27,8 +38,12 @@ public final class PlaybackBufferPolicy {
     }
 
     public static BufferConfig configFor(String mediaTypeName) {
+        return configFor(mediaTypeName, false);
+    }
+
+    public static BufferConfig configFor(String mediaTypeName, boolean largeLiveBuffer) {
         if (XtreamContentType.LIVE.name().equals(mediaTypeName)) {
-            return LIVE;
+            return largeLiveBuffer ? LIVE_LARGE : LIVE;
         }
         return VOD;
     }

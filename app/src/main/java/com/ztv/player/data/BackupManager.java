@@ -2,6 +2,8 @@ package com.ztv.player.data;
 
 import android.content.Context;
 
+import com.ztv.player.AudioDelayPolicy;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -52,6 +54,12 @@ public final class BackupManager {
         settings.put("highContrastFocus", settingsStore.highContrastFocus());
         settings.put("playbackQuality", settingsStore.playbackQuality());
         settings.put("aspectRatio", settingsStore.aspectRatio());
+        settings.put("matchFrameRate", settingsStore.matchFrameRate());
+        settings.put("stayNearLive", settingsStore.stayNearLive());
+        settings.put("tunneledPlayback", settingsStore.tunneledPlayback());
+        settings.put("liveBuffer", settingsStore.liveBuffer());
+        settings.put("audioDecoder", settingsStore.audioDecoder());
+        settings.put("audioDelayMs", settingsStore.audioDelayMs());
         settings.put("recentChannelsCount", settingsStore.recentChannelsCount());
         settings.put("dimUpcomingProgram", settingsStore.dimUpcomingProgram());
         settings.put("detailButtonOrder", new JSONArray(settingsStore.detailButtonOrder()));
@@ -104,6 +112,12 @@ public final class BackupManager {
             settingsStore.setHighContrastFocus(settings.optBoolean("highContrastFocus", true));
             settingsStore.setPlaybackQuality(settings.optString("playbackQuality", SettingsStore.QUALITY_AUTO));
             settingsStore.setAspectRatio(settings.optString("aspectRatio", SettingsStore.ASPECT_FIT));
+            settingsStore.setMatchFrameRate(settings.optBoolean("matchFrameRate", false));
+            settingsStore.setStayNearLive(settings.optBoolean("stayNearLive", true));
+            settingsStore.setTunneledPlayback(settings.optBoolean("tunneledPlayback", false));
+            settingsStore.setLiveBuffer(settings.optString("liveBuffer", SettingsStore.LIVE_BUFFER_NORMAL));
+            settingsStore.setAudioDecoder(settings.optString("audioDecoder", SettingsStore.AUDIO_DECODER_DEVICE));
+            settingsStore.setAudioDelayMs(AudioDelayPolicy.parse(String.valueOf(settings.optInt("audioDelayMs", 0))));
             settingsStore.setRecentChannelsCount(settings.optInt("recentChannelsCount", SettingsStore.DEFAULT_RECENT_COUNT));
             settingsStore.setDimUpcomingProgram(settings.optBoolean("dimUpcomingProgram", true));
             settingsStore.setDetailButtonOrder(toStringList(settings.optJSONArray("detailButtonOrder")));

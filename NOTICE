@@ -17,3 +17,7 @@ Material Icons
 
 AndroidX / Media3 and other Gradle dependencies are distributed under their
 own licenses (mostly Apache License 2.0) and are fetched at build time.
+
+FFmpeg audio decoder
+  Bundled through org.jellyfin.media3:media3-ffmpeg-decoder (Media3 FFmpeg extension).
+  FFmpeg is licensed under the GNU LGPL v2.1 or later: https://ffmpeg.org/legal.html

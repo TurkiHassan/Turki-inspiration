@@ -13,12 +13,16 @@ import android.widget.TextView;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.ui.AspectRatioFrameLayout;
 import androidx.media3.ui.PlayerView;
 
 import com.ztv.player.PlaybackBufferPolicy;
+import com.ztv.player.PlayerRenderers;
 import com.ztv.player.data.XtreamContentType;
 
 /**
@@ -27,6 +31,9 @@ import com.ztv.player.data.XtreamContentType;
  * play/pause disc, tune, PiP, fullscreen) over a bottom scrim, and the top-right info.
  */
 public final class InlinePlayer extends FrameLayout {
+    private static final int CONNECT_TIMEOUT_MS = 8_000;
+    private static final int READ_TIMEOUT_MS = 10_000;
+
     private final PlayerView view;
     private final ProgressBar spinner;
     private final LinearLayout controls;
@@ -41,6 +48,9 @@ public final class InlinePlayer extends FrameLayout {
     public InlinePlayer(Context context) {
         super(context);
         setBackgroundColor(0xFF000000);
+        setFocusable(true);
+        setContentDescription("Live preview");
+        setOnFocusChangeListener((v, focused) -> setForeground(focused ? Nator.focusRing(context, 0) : null));
         view = new PlayerView(context);
         view.setUseController(false);
         view.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
@@ -113,7 +123,10 @@ public final class InlinePlayer extends FrameLayout {
                             config.bufferForPlaybackMs(), config.bufferForPlaybackAfterRebufferMs())
                     .setPrioritizeTimeOverSizeThresholds(config.prioritizeTimeOverSizeThresholds())
                     .build();
-            player = new ExoPlayer.Builder(getContext()).setLoadControl(loadControl).build();
+            player = new ExoPlayer.Builder(getContext(), PlayerRenderers.create(getContext()))
+                    .setLoadControl(loadControl)
+                    .setMediaSourceFactory(buildMediaSourceFactory())
+                    .build();
             player.addListener(new Player.Listener() {
                 @Override
                 public void onPlaybackStateChanged(int state) {
@@ -187,10 +200,21 @@ public final class InlinePlayer extends FrameLayout {
     public void release() {
         removeCallbacks(tick);
         removeCallbacks(hideControls);
+        spinner.setVisibility(GONE);
+        message.setVisibility(GONE);
         view.setPlayer(null);
         if (player != null) {
             player.release();
             player = null;
         }
+    }
+
+    /** Keep embedded live playback transport-compatible with the dedicated player. */
+    private DefaultMediaSourceFactory buildMediaSourceFactory() {
+        DefaultHttpDataSource.Factory httpFactory = new DefaultHttpDataSource.Factory()
+                .setAllowCrossProtocolRedirects(true)
+                .setConnectTimeoutMs(CONNECT_TIMEOUT_MS)
+                .setReadTimeoutMs(READ_TIMEOUT_MS);
+        return new DefaultMediaSourceFactory(new DefaultDataSource.Factory(getContext(), httpFactory));
     }
 }

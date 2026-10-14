@@ -99,6 +99,14 @@ public abstract class Page {
     public void onPlaybackReturned() {
     }
 
+    /** Called immediately before the workspace opens the dedicated full-screen player. */
+    public void onPlaybackStarting() {
+    }
+
+    /** Called when the workspace is no longer visible. Release any audible media resources. */
+    public void onHostStopped() {
+    }
+
     public void onDestroy() {
     }
 
