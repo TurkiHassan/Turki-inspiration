@@ -13,6 +13,12 @@ with the Xtream Codes server address, username and password from their own provi
 - Dashboard, favorites, watch history and resume ("continue watching")
 - Short EPG (now / next) on live channels
 - Playback through AndroidX Media3 (ExoPlayer) with auto-reconnect and tuned live/VOD buffering
+- FFmpeg audio decoder fallback (AC-3, E-AC-3, DTS) for boxes without hardware support, plus automatic decoder fallback
+- Optional frame rate matching (AFR): switches the TV refresh rate to the video, e.g. 50 Hz for sports
+- Stay close to live: after a stall, live channels play slightly faster until they catch back up
+- Optional tunneled playback for supported Android TV devices
+- Player settings: live buffer size, audio decoder (Device / FFmpeg) and audio delay (±300 ms)
+- Clear error messages when the provider refuses a stream (e.g. HTTP 503)
 - Credentials stored with EncryptedSharedPreferences
 - Memory + disk catalog cache and an on-disk poster cache for fast cold starts
 - Workspace UI inspired by [IPTVnator](https://github.com/4gray/iptvnator), DM Sans typeface and
