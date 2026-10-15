@@ -139,7 +139,7 @@ public final class WorkspaceActivity extends Activity {
         PosterLoader.init(getCacheDir());
 
         root = new FrameLayout(this);
-        root.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        root.setLayoutDirection(Tr.arabic() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         root.setBackgroundColor(Nator.SHELL_BG);
         setContentView(root);
         buildShell();
@@ -204,6 +204,16 @@ public final class WorkspaceActivity extends Activity {
         switcherView.setFocusable(!on);
         switcherView.setClickable(!on);
         kidsGuard.check();
+    }
+
+    /** Settings › General › Language: rebuilds the whole interface in the new language. */
+    void switchLanguage(String language) {
+        if (language.equals(settings.appLanguage())) {
+            return;
+        }
+        settings.setAppLanguage(language);
+        getIntent().putExtra(EXTRA_SECTION, Page.Section.SETTINGS.name());
+        recreate();
     }
 
     /** Settings › Kids mode › Start: the parent hands the TV over. */
@@ -359,6 +369,9 @@ public final class WorkspaceActivity extends Activity {
     private void openStartPage() {
         Page.Section section = Page.Section.DASHBOARD;
         String requested = getIntent() == null ? null : getIntent().getStringExtra(EXTRA_SECTION);
+        if (requested != null) {
+            getIntent().removeExtra(EXTRA_SECTION);
+        }
         if (requested != null) {
             try {
                 openSection(Page.Section.valueOf(requested));
@@ -663,7 +676,7 @@ public final class WorkspaceActivity extends Activity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startVoiceSearch();
             } else {
-                snack("Allow the microphone to search by voice");
+                snack(Tr.t("Allow the microphone to search by voice", "اسمح باستخدام الميكروفون للبحث الصوتي"));
             }
         }
     }
@@ -691,11 +704,11 @@ public final class WorkspaceActivity extends Activity {
      */
     public void startVoiceSearch() {
         if (!hasSource()) {
-            snack("Add a playlist to search");
+            snack(Tr.t("Add a playlist to search", "أضف اشتراكًا لتتمكن من البحث"));
             return;
         }
         if (!voiceSearchAvailable()) {
-            snack("Voice search isn't available on this device");
+            snack(Tr.t("Voice search isn't available on this device", "البحث الصوتي غير متاح على هذا الجهاز"));
             return;
         }
         if (SpeechRecognizer.isRecognitionAvailable(this)) {
@@ -709,14 +722,14 @@ public final class WorkspaceActivity extends Activity {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.setComponent(voiceRecognizer);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH);
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Say a channel, movie or series");
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, Tr.t("Say a channel, movie or series", "قل اسم قناة أو فيلم أو مسلسل"));
         intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
         VoiceSearchDialog.putLanguage(intent, settings.voiceLanguage());
         try {
             startActivityForResult(intent, REQUEST_VOICE);
         } catch (ActivityNotFoundException | SecurityException e) {
             voiceRecognizer = null;
-            snack("Voice search isn't available on this device");
+            snack(Tr.t("Voice search isn't available on this device", "البحث الصوتي غير متاح على هذا الجهاز"));
         }
     }
 
@@ -771,7 +784,7 @@ public final class WorkspaceActivity extends Activity {
             return;
         }
         lastBackAt = now;
-        snack("Press back again to exit");
+        snack(Tr.t("Press back again to exit", "اضغط رجوع مرة أخرى للخروج"));
     }
 
     private boolean isInRail(View view) {
@@ -838,10 +851,10 @@ public final class WorkspaceActivity extends Activity {
 
         railLinks = Nator.column(this);
         railLinks.setGravity(Gravity.CENTER_HORIZONTAL);
-        addRailLink(railLinks, Page.Section.DASHBOARD, "dashboard", "Dashboard");
-        addRailLink(railLinks, Page.Section.SOURCES, "playlist_play", "Sources");
-        addRailLink(railLinks, Page.Section.FAVORITES, "favorite", "Global favorites");
-        addRailLink(railLinks, Page.Section.RECENT, "history", "Recently viewed");
+        addRailLink(railLinks, Page.Section.DASHBOARD, "dashboard", Tr.t("Dashboard", "الرئيسية"));
+        addRailLink(railLinks, Page.Section.SOURCES, "playlist_play", Tr.t("Sources", "المصادر"));
+        addRailLink(railLinks, Page.Section.FAVORITES, "favorite", Tr.t("Global favorites", "المفضلة"));
+        addRailLink(railLinks, Page.Section.RECENT, "history", Tr.t("Recently viewed", "شوهد مؤخرًا"));
         rail.addView(railLinks, Nator.wrap());
 
         railContext = Nator.column(this);
@@ -850,7 +863,7 @@ public final class WorkspaceActivity extends Activity {
 
         rail.addView(Nator.spacer(this), new LinearLayout.LayoutParams(1, 0, 1f));
         FrameLayout settingsHolder = new FrameLayout(this);
-        railSettings = railButton(Page.Section.SETTINGS, "settings", "Settings", true);
+        railSettings = railButton(Page.Section.SETTINGS, "settings", Tr.t("Settings", "الإعدادات"), true);
         settingsHolder.addView(railSettings);
         FrameLayout exitKids = new FrameLayout(this);
         exitKids.setContentDescription(Tr.t("Exit Kids mode", "الخروج من وضع الأطفال"));
@@ -891,13 +904,13 @@ public final class WorkspaceActivity extends Activity {
         barParams.gravity = Gravity.CENTER_HORIZONTAL;
         accent.addView(bar, barParams);
         railContext.addView(accent, Nator.margins(this, Nator.size(this, 45, 2), 0, -6, 0, 4));
-        addRailLink(railContext, Page.Section.VOD, "movie", "Movies");
-        addRailLink(railContext, Page.Section.LIVE, "live_tv", "Live TV");
-        addRailLink(railContext, Page.Section.SERIES, "tv", "Series");
+        addRailLink(railContext, Page.Section.VOD, "movie", Tr.t("Movies", "الأفلام"));
+        addRailLink(railContext, Page.Section.LIVE, "live_tv", Tr.t("Live TV", "القنوات"));
+        addRailLink(railContext, Page.Section.SERIES, "tv", Tr.t("Series", "المسلسلات"));
         View divider = Nator.hairline(this, Nator.alpha(Nator.OUTLINE_VARIANT, 0.25f * 2f));
         railContext.addView(divider, Nator.margins(this, Nator.size(this, 24, 1), 0, 3, 0, 3));
-        addRailLink(railContext, Page.Section.RECENTLY_ADDED, "new_releases", "Recently added");
-        addRailLink(railContext, Page.Section.SEARCH, "search", "Search");
+        addRailLink(railContext, Page.Section.RECENTLY_ADDED, "new_releases", Tr.t("Recently added", "أُضيف حديثًا"));
+        addRailLink(railContext, Page.Section.SEARCH, "search", Tr.t("Search", "البحث"));
         Page page = top();
         if (page != null) {
             highlightRail(page.section());
@@ -922,7 +935,7 @@ public final class WorkspaceActivity extends Activity {
         indicator.setVisibility(View.GONE);
         FrameLayout.LayoutParams indicatorParams = new FrameLayout.LayoutParams(Nator.px(this, 3), Nator.px(this, 18));
         indicatorParams.gravity = Gravity.END | Gravity.CENTER_VERTICAL;
-        indicatorParams.rightMargin = -Nator.px(this, 4);
+        indicatorParams.setMarginEnd(-Nator.px(this, 4));
         button.addView(indicator, indicatorParams);
         button.setTag(new RailViews(glyph, indicator, footer));
         button.setOnClickListener(v -> openSection(section));
@@ -997,7 +1010,7 @@ public final class WorkspaceActivity extends Activity {
         Nator.pad(header, 16, 0, 24, 0);
 
         headerBackSlot = new FrameLayout(this);
-        View back = iconButton("arrow_back", 24, "Back", v -> {
+        View back = iconButton("arrow_back", 24, Tr.t("Back", "رجوع"), v -> {
             if (stack.size() > 1) {
                 pop();
             }
@@ -1009,12 +1022,12 @@ public final class WorkspaceActivity extends Activity {
         header.addView(switcherView, Nator.margins(this, Nator.size(this, 260, 44), 0, 0, 12, 0));
         header.addView(buildSearchField(), Nator.margins(this, Nator.size(this, 586, 38), 0, 0, 8, 0));
         if (voiceSearchAvailable()) {
-            header.addView(iconButton("mic", 24, "Voice search", v -> startVoiceSearch()),
+            header.addView(iconButton("mic", 24, Tr.t("Voice search", "البحث الصوتي"), v -> startVoiceSearch()),
                     Nator.margins(this, Nator.size(this, 40, 40), 0, 0, 4, 0));
         }
-        header.addView(iconButton("keyboard", 24, "Open remote shortcuts", v -> showShortcuts()),
+        header.addView(iconButton("keyboard", 24, Tr.t("Open remote shortcuts", "اختصارات جهاز التحكم"), v -> showShortcuts()),
                 Nator.margins(this, Nator.size(this, 40, 40), 0, 0, 4, 0));
-        headerAdd = iconButton("add", 24, "Add playlist", v -> showAddPlaylist(null));
+        headerAdd = iconButton("add", 24, Tr.t("Add playlist", "إضافة اشتراك"), v -> showAddPlaylist(null));
         header.addView(headerAdd, Nator.size(this, 40, 40));
         header.addView(Nator.spacer(this));
         LinearLayout badge = Nator.row(this);
@@ -1046,7 +1059,7 @@ public final class WorkspaceActivity extends Activity {
         switcher.setBackground(Nator.roundedStroke(this, Nator.alpha(Nator.ON_SURFACE, 0.05f), 10, 1, Nator.OUTLINE_VARIANT));
         Nator.pad(switcher, 4, 4, 8, 4);
         Nator.focusable(switcher, 10);
-        switcher.setContentDescription("Select playlist");
+        switcher.setContentDescription(Tr.t("Select playlist", "اختر الاشتراك"));
 
         FrameLayout iconBox = new FrameLayout(this);
         iconBox.setBackground(Nator.rounded(this, Nator.alpha(Nator.ON_SURFACE, 0.08f), 8));
@@ -1058,8 +1071,8 @@ public final class WorkspaceActivity extends Activity {
         switcher.addView(iconBox, Nator.margins(this, Nator.size(this, 30, 30), 1, 0, 8, 0));
 
         LinearLayout texts = Nator.column(this);
-        switcherName = Nator.line(this, "Select playlist", 15.2f, Nator.W600, Nator.ON_SURFACE);
-        switcherSubtitle = Nator.line(this, "No sources available", 11.84f, Nator.W400, Nator.ON_SURFACE_VARIANT);
+        switcherName = Nator.line(this, Tr.t("Select playlist", "اختر الاشتراك"), 15.2f, Nator.W600, Nator.ON_SURFACE);
+        switcherSubtitle = Nator.line(this, Tr.t("No sources available", "لا توجد مصادر"), 11.84f, Nator.W400, Nator.ON_SURFACE_VARIANT);
         texts.addView(switcherName);
         texts.addView(switcherSubtitle, Nator.margins(this, Nator.wrap(), 0, 1, 0, 0));
         switcher.addView(texts, new LinearLayout.LayoutParams(0, -2, 1f));
@@ -1078,8 +1091,8 @@ public final class WorkspaceActivity extends Activity {
             switcherName.setText(playlistTitle());
             switcherSubtitle.setText("Xtream Code");
         } else {
-            switcherName.setText("Select playlist");
-            switcherSubtitle.setText("No sources available");
+            switcherName.setText(Tr.t("Select playlist", "اختر الاشتراك"));
+            switcherSubtitle.setText(Tr.t("No sources available", "لا توجد مصادر"));
         }
     }
 
@@ -1164,7 +1177,7 @@ public final class WorkspaceActivity extends Activity {
         suppressSearchEvents = false;
         searchInput.setEnabled(enabled);
         searchInput.setFocusable(enabled);
-        searchInput.setHint(enabled ? page.searchPlaceholder() : (hasSource() ? "Search unavailable here" : "Add a playlist to search"));
+        searchInput.setHint(enabled ? page.searchPlaceholder() : (hasSource() ? Tr.t("Search unavailable here", "البحث غير متاح هنا") : Tr.t("Add a playlist to search", "أضف اشتراكًا لتتمكن من البحث")));
         searchChip.setText(scope == null ? "" : scope);
         searchChip.setVisibility(scope == null || scope.isEmpty() ? View.GONE : View.VISIBLE);
         searchField.setAlpha(enabled ? 1f : 0.6f);
@@ -1217,7 +1230,14 @@ public final class WorkspaceActivity extends Activity {
         int[] rootAt = new int[2];
         root.getLocationInWindow(rootAt);
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(-2, -2);
-        params.leftMargin = at[0] - rootAt[0];
+        // Screen coordinates: align the menu with the anchor's start edge in either direction.
+        if (Tr.arabic()) {
+            params.gravity = Gravity.RIGHT | Gravity.TOP;
+            params.rightMargin = root.getWidth() - (at[0] - rootAt[0] + anchor.getWidth());
+        } else {
+            params.gravity = Gravity.LEFT | Gravity.TOP;
+            params.leftMargin = at[0] - rootAt[0];
+        }
         params.topMargin = at[1] - rootAt[1] + anchor.getHeight() + Nator.px(this, 4);
         menu.setElevation(Nator.fpx(this, 8));
         scrim.addView(menu, params);
@@ -1310,13 +1330,13 @@ public final class WorkspaceActivity extends Activity {
         LinearLayout menu = menuPanel();
         if (hasSource()) {
             menuItem(menu, playlistTitle(), "cloud", true, () -> openSection(Page.Section.VOD));
-            menuItem(menu, "Account info", "info", false, this::showAccountInfo);
-            menuItem(menu, "Refresh playlist", "refresh", false, () -> {
+            menuItem(menu, Tr.t("Account info", "معلومات الحساب"), "info", false, this::showAccountInfo);
+            menuItem(menu, Tr.t("Refresh playlist", "تحديث الاشتراك"), "refresh", false, () -> {
                 catalog.refreshAll();
-                snack("Refreshing playlist...");
+                snack(Tr.t("Refreshing playlist...", "جارٍ تحديث الاشتراك..."));
             });
         }
-        menuItem(menu, "Manage sources", "playlist_play", false, () -> openSection(Page.Section.SOURCES));
+        menuItem(menu, Tr.t("Manage sources", "إدارة المصادر"), "playlist_play", false, () -> openSection(Page.Section.SOURCES));
         showMenu(anchor, menu);
     }
 
@@ -1335,14 +1355,14 @@ public final class WorkspaceActivity extends Activity {
         LinearLayout card = Nator.column(this);
         card.setBackground(Nator.rounded(this, Nator.WIDGET_BG, 16));
         Nator.pad(card, 24, 22, 24, 18);
-        card.addView(Nator.text(this, "Remote shortcuts", 20, Nator.W600, Nator.HEADING));
+        card.addView(Nator.text(this, Tr.t("Remote shortcuts", "اختصارات جهاز التحكم"), 20, Nator.W600, Nator.HEADING));
         String[][] rows = {
-                {"OK", "Open / play the focused item"},
+                {"OK", Tr.t("Open / play the focused item", "فتح العنصر المحدد أو تشغيله")},
                 {"Back", "Previous page, then the rail, then exit"},
-                {"◀ ▶ ▲ ▼", "Move between rail, categories and content"},
-                {"CH+ / CH−", "Next / previous channel while playing"},
-                {"Menu", "Toggle favorite on the focused item"},
-                {"Mic / Search", "Voice search: say a channel, movie or series"},
+                {"◀ ▶ ▲ ▼", Tr.t("Move between rail, categories and content", "التنقل بين القائمة الجانبية والفئات والمحتوى")},
+                {"CH+ / CH−", Tr.t("Next / previous channel while playing", "القناة التالية أو السابقة أثناء المشاهدة")},
+                {"Menu", Tr.t("Toggle favorite on the focused item", "إضافة العنصر المحدد إلى المفضلة أو إزالته")},
+                {"Mic / Search", Tr.t("Voice search: say a channel, movie or series", "البحث الصوتي: قل اسم قناة أو فيلم أو مسلسل")},
         };
         for (String[] row : rows) {
             LinearLayout line = Nator.row(this);
@@ -1354,7 +1374,7 @@ public final class WorkspaceActivity extends Activity {
             line.addView(Nator.text(this, row[1], 13.5f, Nator.W400, Nator.BODY), new LinearLayout.LayoutParams(0, -2, 1f));
             card.addView(line, Nator.margins(this, Nator.matchWidth(), 0, 14, 0, 0));
         }
-        View close = dialogTextButton("Close", this::dismissTopOverlay);
+        View close = dialogTextButton(Tr.t("Close", "إغلاق"), this::dismissTopOverlay);
         LinearLayout actions = Nator.row(this);
         actions.setGravity(Gravity.END);
         actions.addView(close);

@@ -485,7 +485,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
             card.setBackground(Nator.rounded(context, Nator.THUMB_BG, 10));
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(width,
                     type == XtreamContentType.LIVE ? Math.round(width * 89f / 159f) : Math.round(width * 1.5f));
-            params.rightMargin = Nator.px(context, gap());
+            params.setMarginEnd(Nator.px(context, gap()));
             cards.addView(card, params);
         }
         column.addView(cards);

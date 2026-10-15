@@ -51,14 +51,14 @@ public final class SettingsPage extends Page {
 
     private final String[][] NAV = {
             {"APP", null, null},
-            {"general", "General", "tune"},
+            {"general", Tr.t("General", "عام"), "tune"},
             {"kids", Tr.t("Kids mode", "وضع الأطفال"), "child_care"},
-            {"playback", "Playback", "play_circle"},
-            {"dashboard", "Dashboard", "dashboard"},
+            {"playback", Tr.t("Playback", "التشغيل"), "play_circle"},
+            {"dashboard", Tr.t("Dashboard", "الرئيسية"), "dashboard"},
             {"LIBRARY", null, null},
-            {"categories", "Categories", "movie"},
+            {"categories", Tr.t("Categories", "الفئات"), "movie"},
             {"DATA", null, null},
-            {"backup", "Backup & data", "backup"},
+            {"backup", Tr.t("Backup & data", "النسخ الاحتياطي والبيانات"), "backup"},
     };
 
     private final Context context;
@@ -85,11 +85,11 @@ public final class SettingsPage extends Page {
 
     @Override
     public String searchPlaceholder() {
-        return "Search settings...";
+        return Tr.t("Search settings...", "ابحث في الإعدادات...");
     }
 
     private static final String[][] SEARCH_INDEX = {
-            {"general", "general appearance cover size titles covers startup start language theme"},
+            {"general", "general appearance cover size titles covers startup start language theme arabic english لغة عربي عام"},
             {"kids", "kids children child parental parent pin lock bedtime limit time أطفال الأطفال"},
             {"playback", "playback player auto-play autoplay next episode recently viewed history size"},
             {"dashboard", "dashboard rails continue watching favorites recently added sources live"},
@@ -135,7 +135,7 @@ public final class SettingsPage extends Page {
     @Override
     protected View buildContextPanel() {
         LinearLayout panel = Nator.column(context);
-        TextView title = Nator.text(context, "Settings", 20, Nator.W600, Nator.HEADING);
+        TextView title = Nator.text(context, Tr.t("Settings", "الإعدادات"), 20, Nator.W600, Nator.HEADING);
         Nator.pad(title, 6, 2, 6, 14);
         panel.addView(title);
         nav = Nator.column(context);
@@ -155,7 +155,7 @@ public final class SettingsPage extends Page {
         footer.addView(Nator.hairline(context, Nator.SEPARATOR), new LinearLayout.LayoutParams(-1, Math.max(1, Nator.px(context, 1))));
         LinearLayout footerItems = Nator.column(context);
         Nator.pad(footerItems, 8, 8, 8, 4);
-        footerItems.addView(navItem("about", "About", "info", BuildConfig.VERSION_NAME), new LinearLayout.LayoutParams(-1, Nator.px(context, 34)));
+        footerItems.addView(navItem("about", Tr.t("About", "حول التطبيق"), "info", BuildConfig.VERSION_NAME), new LinearLayout.LayoutParams(-1, Nator.px(context, 34)));
         footer.addView(footerItems);
         panel.addView(footer);
         return panel;
@@ -240,92 +240,99 @@ public final class SettingsPage extends Page {
         scroll.addView(page, new ScrollView.LayoutParams(-1, -2));
         switch (sectionKey) {
             case "playback":
-                heading(page, "Playback", "How streams start, continue and what the player remembers.");
-                LinearLayout player = card(page, "Player");
-                toggleRow(player, "Auto-play next episode", "When an episode ends, the next one in the season starts automatically.",
+                heading(page, Tr.t("Playback", "التشغيل"), Tr.t("How streams start, continue and what the player remembers.", "كيف يبدأ البث ويستمر، وما يتذكره المشغّل."));
+                LinearLayout player = card(page, Tr.t("Player", "المشغّل"));
+                toggleRow(player, Tr.t("Auto-play next episode", "تشغيل الحلقة التالية تلقائيًا"), Tr.t("When an episode ends, the next one in the season starts automatically.", "عند انتهاء الحلقة تبدأ الحلقة التالية من الموسم تلقائيًا."),
                         host.settings.autoPlayNextEpisode(), value -> host.settings.setAutoPlayNextEpisode(value));
-                toggleRow(player, "Match frame rate", "Switch the TV refresh rate to the video's (e.g. 50 Hz for sports) for smoother motion. Some TVs blank briefly when it switches.",
+                toggleRow(player, Tr.t("Match frame rate", "مطابقة معدل الإطارات"), Tr.t("Switch the TV refresh rate to the video's (e.g. 50 Hz for sports) for smoother motion. Some TVs blank briefly when it switches.", "يضبط معدل تحديث الشاشة على معدل الفيديو (مثل 50 هرتز للرياضة) لحركة أنعم. قد تُظلم بعض الشاشات لحظةً عند التبديل."),
                         host.settings.matchFrameRate(), value -> host.settings.setMatchFrameRate(value));
-                toggleRow(player, "Stay close to live", "After a live channel stalls, play slightly faster until it catches back up to live.",
+                toggleRow(player, Tr.t("Stay close to live", "البقاء قريبًا من البث المباشر"), Tr.t("After a live channel stalls, play slightly faster until it catches back up to live.", "بعد توقف القناة المباشرة يُسرَّع التشغيل قليلًا حتى يلحق بالبث المباشر."),
                         host.settings.stayNearLive(), value -> host.settings.setStayNearLive(value));
-                toggleRow(player, "Tunneled playback", "Let the TV hardware keep audio and video in sync. Turn off if you get a black screen or no sound.",
+                toggleRow(player, Tr.t("Tunneled playback", "التشغيل النفقي"), Tr.t("Let the TV hardware keep audio and video in sync. Turn off if you get a black screen or no sound.", "يترك للجهاز مزامنة الصوت والصورة. أوقفه إن ظهرت شاشة سوداء أو انقطع الصوت."),
                         host.settings.tunneledPlayback(), value -> host.settings.setTunneledPlayback(value));
-                segmentedRow(player, "Live buffer", "Large waits a little longer to start but stalls less on weak connections.",
+                segmentedRow(player, Tr.t("Live buffer", "ذاكرة البث المباشر"), Tr.t("Large waits a little longer to start but stalls less on weak connections.", "«كبيرة» تتأخر قليلًا في البدء، لكنها تتوقف أقل مع الاتصال الضعيف."),
                         new String[]{SettingsStore.LIVE_BUFFER_NORMAL, SettingsStore.LIVE_BUFFER_LARGE},
                         new String[]{"speed", "storage"},
                         host.settings.liveBuffer(), value -> host.settings.setLiveBuffer(value));
-                segmentedRow(player, "Audio decoder", "FFmpeg decodes audio in software. Try it if a channel has no sound or crackles.",
+                segmentedRow(player, Tr.t("Audio decoder", "مفكك الصوت"), Tr.t("FFmpeg decodes audio in software. Try it if a channel has no sound or crackles.", "FFmpeg يفك الصوت برمجيًا. جرّبه إن كانت القناة بلا صوت أو فيها تقطيع."),
                         new String[]{SettingsStore.AUDIO_DECODER_DEVICE, SettingsStore.AUDIO_DECODER_FFMPEG},
                         new String[]{"memory", "graphic_eq"},
                         host.settings.audioDecoder(), value -> host.settings.setAudioDecoder(value));
                 String[] delayIcons = new String[AudioDelayPolicy.OPTIONS.length];
                 Arrays.fill(delayIcons, "sync");
-                segmentedRow(player, "Audio delay (ms)", "Shift the sound if it is out of sync with the picture. Positive plays audio later.",
+                segmentedRow(player, Tr.t("Audio delay (ms)", "تأخير الصوت (ملّي ثانية)"), Tr.t("Shift the sound if it is out of sync with the picture. Positive plays audio later.", "أزِح الصوت إن لم يتزامن مع الصورة. القيمة الموجبة تؤخر الصوت."),
                         AudioDelayPolicy.OPTIONS, delayIcons, AudioDelayPolicy.label(host.settings.audioDelayMs()),
                         value -> host.settings.setAudioDelayMs(AudioDelayPolicy.parse(value)));
-                segmentedRow(player, "Recently viewed size", "How many channels and titles Recently viewed keeps per type.",
+                segmentedRow(player, Tr.t("Recently viewed size", "عدد «شوهد مؤخرًا»"), Tr.t("How many channels and titles Recently viewed keeps per type.", "عدد القنوات والعناوين التي يحتفظ بها «شوهد مؤخرًا» لكل نوع."),
                         new String[]{"10", "15", "30"}, new String[]{"history", "history", "history"},
                         String.valueOf(host.settings.recentChannelsCount()), value -> host.settings.setRecentChannelsCount(Integer.parseInt(value)));
                 break;
             case "dashboard":
-                heading(page, "Dashboard", "Choose which rails the dashboard shows. Empty rails hide themselves.");
-                LinearLayout rails = card(page, "Rails");
-                railToggle(rails, PREF_RAIL_CONTINUE, "Continue Watching", "Unfinished movies and episodes.");
-                railToggle(rails, PREF_RAIL_LIVE_FAVORITES, "Live now on your favorites", "Your favorite channels.");
-                railToggle(rails, PREF_RAIL_RECENT_LIVE, "Recently watched live TV", "Channels you opened lately.");
-                railToggle(rails, PREF_RAIL_FAVORITE_VOD, "Favorite movies & series", "Titles you marked as favorites.");
-                railToggle(rails, PREF_RAIL_SOURCES, "Recently Used Sources", "Your Xtream playlist.");
-                railToggle(rails, PREF_RAIL_RECENTLY_ADDED, "Recently Added on Xtream", "The newest movies and series.");
+                heading(page, Tr.t("Dashboard", "الرئيسية"), Tr.t("Choose which rails the dashboard shows. Empty rails hide themselves.", "اختر الصفوف التي تظهر في الرئيسية. الصفوف الفارغة تختفي تلقائيًا."));
+                LinearLayout rails = card(page, Tr.t("Rails", "الصفوف"));
+                railToggle(rails, PREF_RAIL_CONTINUE, Tr.t("Continue Watching", "تابع المشاهدة"), Tr.t("Unfinished movies and episodes.", "الأفلام والحلقات التي لم تكتمل."));
+                railToggle(rails, PREF_RAIL_LIVE_FAVORITES, Tr.t("Live now on your favorites", "الآن على قنواتك المفضلة"), Tr.t("Your favorite channels.", "قنواتك المفضلة."));
+                railToggle(rails, PREF_RAIL_RECENT_LIVE, Tr.t("Recently watched live TV", "قنوات شوهدت مؤخرًا"), Tr.t("Channels you opened lately.", "القنوات التي فتحتها مؤخرًا."));
+                railToggle(rails, PREF_RAIL_FAVORITE_VOD, Tr.t("Favorite movies & series", "الأفلام والمسلسلات المفضلة"), Tr.t("Titles you marked as favorites.", "العناوين التي أضفتها إلى المفضلة."));
+                railToggle(rails, PREF_RAIL_SOURCES, Tr.t("Recently Used Sources", "المصادر المستخدمة مؤخرًا"), Tr.t("Your Xtream playlist.", "اشتراك Xtream الخاص بك."));
+                railToggle(rails, PREF_RAIL_RECENTLY_ADDED, Tr.t("Recently Added on Xtream", "أُضيف حديثًا"), Tr.t("The newest movies and series.", "أحدث الأفلام والمسلسلات."));
                 break;
             case "categories":
-                heading(page, "Categories", "Hide categories you never watch. Hidden categories disappear from the panel and search.");
-                LinearLayout cats = card(page, "Manage categories");
-                actionRow(cats, "Live TV categories", hiddenSummary(XtreamContentType.LIVE), "Manage", () -> manage(XtreamContentType.LIVE));
-                actionRow(cats, "Movie categories", hiddenSummary(XtreamContentType.MOVIE), "Manage", () -> manage(XtreamContentType.MOVIE));
-                actionRow(cats, "Series categories", hiddenSummary(XtreamContentType.SERIES), "Manage", () -> manage(XtreamContentType.SERIES));
+                heading(page, Tr.t("Categories", "الفئات"), Tr.t("Hide categories you never watch. Hidden categories disappear from the panel and search.", "أخفِ الفئات التي لا تشاهدها. الفئات المخفية تختفي من القائمة ومن البحث."));
+                LinearLayout cats = card(page, Tr.t("Manage categories", "إدارة الفئات"));
+                actionRow(cats, Tr.t("Live TV categories", "فئات القنوات"), hiddenSummary(XtreamContentType.LIVE), Tr.t("Manage", "إدارة"), () -> manage(XtreamContentType.LIVE));
+                actionRow(cats, Tr.t("Movie categories", "فئات الأفلام"), hiddenSummary(XtreamContentType.MOVIE), Tr.t("Manage", "إدارة"), () -> manage(XtreamContentType.MOVIE));
+                actionRow(cats, Tr.t("Series categories", "فئات المسلسلات"), hiddenSummary(XtreamContentType.SERIES), Tr.t("Manage", "إدارة"), () -> manage(XtreamContentType.SERIES));
                 break;
             case "backup":
-                heading(page, "Backup & data", "Export or restore favorites, history, watch progress and settings. Credentials are never included.");
-                LinearLayout backup = card(page, "Backup");
-                actionRow(backup, "Export backup", "Save a JSON file with your library data.", "Export", this::startExport);
-                actionRow(backup, "Import backup", "Replace current data with a saved backup.", "Import", this::startImport);
-                LinearLayout data = card(page, "Data");
-                actionRow(data, "Clear catalog cache", "Re-download channel, movie and series lists on next open.", "Clear", () -> {
+                heading(page, Tr.t("Backup & data", "النسخ الاحتياطي والبيانات"), Tr.t("Export or restore favorites, history, watch progress and settings. Credentials are never included.", "صدّر أو استعد المفضلة والسجل وتقدم المشاهدة والإعدادات. بيانات الدخول لا تُضمَّن أبدًا."));
+                LinearLayout backup = card(page, Tr.t("Backup", "النسخ الاحتياطي"));
+                actionRow(backup, Tr.t("Export backup", "تصدير نسخة احتياطية"), Tr.t("Save a JSON file with your library data.", "احفظ ملف JSON ببيانات مكتبتك."), Tr.t("Export", "تصدير"), this::startExport);
+                actionRow(backup, Tr.t("Import backup", "استيراد نسخة احتياطية"), Tr.t("Replace current data with a saved backup.", "استبدل البيانات الحالية بنسخة محفوظة."), Tr.t("Import", "استيراد"), this::startImport);
+                LinearLayout data = card(page, Tr.t("Data", "البيانات"));
+                actionRow(data, Tr.t("Clear catalog cache", "مسح ذاكرة القوائم"), Tr.t("Re-download channel, movie and series lists on next open.", "إعادة تنزيل قوائم القنوات والأفلام والمسلسلات عند الفتح التالي."), Tr.t("Clear", "مسح"), () -> {
                     host.catalog.clearDisk();
-                    host.snack("Catalog cache cleared");
+                    host.snack(Tr.t("Catalog cache cleared", "تم مسح ذاكرة القوائم"));
                 });
-                actionRow(data, "Sign out", "Remove the Xtream account from this device.", "Sign out", () -> host.openSection(Section.SOURCES));
+                actionRow(data, Tr.t("Sign out", "تسجيل الخروج"), Tr.t("Remove the Xtream account from this device.", "إزالة حساب Xtream من هذا الجهاز."), Tr.t("Sign out", "تسجيل الخروج"), () -> host.openSection(Section.SOURCES));
                 break;
             case "kids":
                 renderKids(page);
                 break;
             case "about":
-                heading(page, "About", "ZTV for Android TV.");
-                LinearLayout about = card(page, "Application");
-                infoRow(about, "Version", BuildConfig.VERSION_NAME + (BuildConfig.DEBUG ? " (debug)" : ""));
-                infoRow(about, "Server", host.hasSource() ? ServerAddressPolicy.display(host.credentials().host()) : "—");
-                infoRow(about, "Interface", "Based on IPTVnator by 4gray (MIT License)");
+                heading(page, Tr.t("About", "حول التطبيق"), Tr.t("ZTV for Android TV.", "ZTV لأجهزة Android TV."));
+                LinearLayout about = card(page, Tr.t("Application", "التطبيق"));
+                infoRow(about, Tr.t("Version", "الإصدار"), BuildConfig.VERSION_NAME + (BuildConfig.DEBUG ? " (debug)" : ""));
+                infoRow(about, Tr.t("Server", "الخادم"), host.hasSource() ? ServerAddressPolicy.display(host.credentials().host()) : "—");
+                infoRow(about, Tr.t("Interface", "الواجهة"), Tr.t("Based on IPTVnator by 4gray (MIT License)", "مبنية على IPTVnator من 4gray (رخصة MIT)"));
                 break;
             case "general":
             default:
-                heading(page, "General", "Language, appearance and how the app starts.");
-                LinearLayout appearance = card(page, "Appearance");
-                segmentedRow(appearance, "Cover size",
-                        "Adjust the size of poster cards across grids and rails. Larger sizes are easier to see on TVs; smaller sizes show more content per row.",
+                heading(page, Tr.t("General", "عام"), Tr.t("Language, appearance and how the app starts.", "اللغة والمظهر وطريقة بدء التطبيق."));
+                LinearLayout language = card(page, Tr.t("Language", "اللغة"));
+                segmentedRow(language, Tr.t("App language", "لغة التطبيق"),
+                        Tr.t("Arabic switches the whole interface to Arabic, right to left.",
+                                "العربية تحوّل الواجهة كلها إلى العربية من اليمين إلى اليسار."),
+                        new String[]{"English", "العربية"}, new String[]{"translate", "translate"},
+                        "ar".equals(host.settings.appLanguage()) ? "العربية" : "English",
+                        value -> host.switchLanguage("العربية".equals(value) ? "ar" : "en"));
+                LinearLayout appearance = card(page, Tr.t("Appearance", "المظهر"));
+                segmentedRow(appearance, Tr.t("Cover size", "حجم الأغلفة"),
+                        Tr.t("Adjust the size of poster cards across grids and rails. Larger sizes are easier to see on TVs; smaller sizes show more content per row.", "اضبط حجم بطاقات الأغلفة في الشبكات والصفوف. الأحجام الكبيرة أوضح على التلفاز، والصغيرة تعرض محتوى أكثر في الصف."),
                         new String[]{"Small", "Medium", "Large"}, new String[]{"view_module", "view_comfy", "view_quilt"},
                         capitalize(host.prefs.string(PREF_COVER_SIZE, "medium")),
                         value -> host.prefs.put(PREF_COVER_SIZE, value.toLowerCase(Locale.ROOT)));
-                toggleRow(appearance, "Show titles under covers",
-                        "Turn off for a posters-only wall in movie and series grids: the title appears on the cover when you focus it. Live channels, search results and dashboard rails keep their labels.",
+                toggleRow(appearance, Tr.t("Show titles under covers", "إظهار العناوين تحت الأغلفة"),
+                        Tr.t("Turn off for a posters-only wall in movie and series grids: the title appears on the cover when you focus it. Live channels, search results and dashboard rails keep their labels.", "أوقفه لعرض الأغلفة وحدها في شبكات الأفلام والمسلسلات، ويظهر العنوان على الغلاف عند تحديده. القنوات ونتائج البحث وصفوف الرئيسية تبقى بعناوينها."),
                         host.prefs.bool(PREF_SHOW_TITLES, true), value -> host.prefs.put(PREF_SHOW_TITLES, value));
-                LinearLayout startup = card(page, "Startup");
-                segmentedRow(startup, "Startup view",
-                        "Choose whether ZTV opens the dashboard or restores your last section-level view.",
+                LinearLayout startup = card(page, Tr.t("Startup", "البدء"));
+                segmentedRow(startup, Tr.t("Startup view", "شاشة البدء"),
+                        Tr.t("Choose whether ZTV opens the dashboard or restores your last section-level view.", "اختر هل يفتح ZTV على الرئيسية أم على آخر قسم كنت فيه."),
                         new String[]{"Dashboard", "Last view"}, new String[]{"dashboard", "restore"},
                         host.settings.startupHome() ? "Dashboard" : "Last view",
                         value -> host.settings.setStartupHome("Dashboard".equals(value)));
                 if (host.voiceSearchAvailable()) {
-                    LinearLayout voice = card(page, "Voice search");
+                    LinearLayout voice = card(page, Tr.t("Voice search", "البحث الصوتي"));
                     String[] languages = {"Auto", "Arabic", "English", "TV language"};
                     String[] tags = {SettingsStore.VOICE_BILINGUAL, SettingsStore.VOICE_ARABIC, SettingsStore.VOICE_ENGLISH, SettingsStore.VOICE_DEVICE};
                     String current = languages[0];
@@ -334,8 +341,8 @@ public final class SettingsPage extends Page {
                             current = languages[i];
                         }
                     }
-                    segmentedRow(voice, "Voice language",
-                            "Auto hears you once and searches what you said in both Arabic and English. Pick one language to make it a little faster.",
+                    segmentedRow(voice, Tr.t("Voice language", "لغة البحث الصوتي"),
+                            Tr.t("Auto hears you once and searches what you said in both Arabic and English. Pick one language to make it a little faster.", "«تلقائي» يسمعك مرة واحدة ويبحث بما قلته بالعربية والإنجليزية معًا. اختر لغة واحدة ليكون أسرع قليلًا."),
                             languages, new String[]{"translate", "translate", "translate", "tv"}, current,
                             value -> {
                                 for (int i = 0; i < languages.length; i++) {
@@ -480,13 +487,32 @@ public final class SettingsPage extends Page {
         return 0;
     }
 
+    /** Segmented options keep English values; only what's shown is translated. */
+    private static String optionLabel(String option) {
+        switch (option) {
+            case "Small": return Tr.t(option, "صغير");
+            case "Medium": return Tr.t(option, "متوسط");
+            case "Large": return Tr.t(option, "كبير");
+            case "Normal": return Tr.t(option, "عادي");
+            case "Dashboard": return Tr.t(option, "الرئيسية");
+            case "Last view": return Tr.t(option, "آخر قسم");
+            case "Device": return Tr.t(option, "الجهاز");
+            case "Auto": return Tr.t(option, "تلقائي");
+            case "Arabic": return Tr.t(option, "العربية");
+            case "TV language": return Tr.t(option, "لغة الجهاز");
+            default: return option;
+        }
+    }
+
     private static String capitalize(String value) {
         return value.isEmpty() ? value : Character.toUpperCase(value.charAt(0)) + value.substring(1);
     }
 
     private String hiddenSummary(XtreamContentType type) {
         int hidden = host.settings.hiddenSections(type).size();
-        return hidden == 0 ? "All categories visible" : Nator.plural(hidden, "category", "categories") + " hidden";
+        return hidden == 0 ? Tr.t("All categories visible", "كل الفئات ظاهرة")
+                : Tr.t(Nator.plural(hidden, "category", "categories") + " hidden",
+                "مخفي: " + Nator.plural(hidden, "category", "categories", "فئة واحدة", "فئتان", "فئات", "فئة"));
     }
 
     private void manage(XtreamContentType type) {
@@ -503,7 +529,7 @@ public final class SettingsPage extends Page {
 
             @Override
             public void onLibraryError(XtreamContentType loaded, Exception error) {
-                host.snack("Categories could not be loaded");
+                host.snack(Tr.t("Categories could not be loaded", "تعذّر تحميل الفئات"));
             }
         });
     }
@@ -594,7 +620,7 @@ public final class SettingsPage extends Page {
             Nator.pad(button, 12, 0, 12, 0);
             Nator.focusable(button, 999);
             TextView glyph = Nator.icon(context, icons[i], 14, Nator.BODY);
-            TextView text = Nator.text(context, option, 12.5f, Nator.W500, Nator.BODY);
+            TextView text = Nator.text(context, optionLabel(option), 12.5f, Nator.W500, Nator.BODY);
             button.addView(glyph, Nator.margins(context, Nator.size(context, 14, 14), 0, 0, 6, 0));
             button.addView(text);
             Runnable style = () -> {
@@ -645,7 +671,7 @@ public final class SettingsPage extends Page {
         try {
             host.startActivityForResult(intent, REQUEST_EXPORT);
         } catch (Exception exception) {
-            host.snack("No file app available to save the backup");
+            host.snack(Tr.t("No file app available to save the backup", "لا يوجد تطبيق ملفات لحفظ النسخة الاحتياطية"));
         }
     }
 
@@ -656,7 +682,7 @@ public final class SettingsPage extends Page {
         try {
             host.startActivityForResult(intent, REQUEST_IMPORT);
         } catch (Exception exception) {
-            host.snack("No file app available to pick a backup");
+            host.snack(Tr.t("No file app available to pick a backup", "لا يوجد تطبيق ملفات لاختيار نسخة احتياطية"));
         }
     }
 
@@ -670,9 +696,9 @@ public final class SettingsPage extends Page {
                         throw new IOException("Could not open destination file");
                     }
                     out.write(backup.export().getBytes(StandardCharsets.UTF_8));
-                    result = "Backup saved";
+                    result = Tr.t("Backup saved", "تم حفظ النسخة الاحتياطية");
                 } catch (Exception exception) {
-                    result = "Export failed: " + exception.getMessage();
+                    result = Tr.t("Export failed: ", "فشل التصدير: ") + exception.getMessage();
                 }
                 String message = result;
                 host.runOnUiThread(() -> host.snack(message));
@@ -692,9 +718,9 @@ public final class SettingsPage extends Page {
                         builder.append(buffer, 0, read);
                     }
                     backup.restoreFrom(builder.toString());
-                    result = "Backup restored";
+                    result = Tr.t("Backup restored", "تمت استعادة النسخة الاحتياطية");
                 } catch (Exception exception) {
-                    result = "Restore failed: " + exception.getMessage();
+                    result = Tr.t("Restore failed: ", "فشلت الاستعادة: ") + exception.getMessage();
                 }
                 String message = result;
                 host.runOnUiThread(() -> {

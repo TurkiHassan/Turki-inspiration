@@ -73,7 +73,7 @@ final class AddPlaylistDialog {
             boolean active = i == 2;
             View method = methodCard(methods[i][0], methods[i][1], methods[i][2], active);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, Nator.px(context, 122), 1f);
-            params.rightMargin = i % 3 == 2 ? 0 : Nator.px(context, 10);
+            params.setMarginEnd(i % 3 == 2 ? 0 : Nator.px(context, 10));
             gridRow.addView(method, params);
             if (active) {
                 xtreamCard = method;

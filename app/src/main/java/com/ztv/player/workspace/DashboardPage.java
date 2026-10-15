@@ -168,6 +168,8 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
             return;
         }
         if (host.kidsMode()) {
+            // Focus is in a rail: only add the Kids rails that were still missing.
+            addKidsRails();
             return;
         }
         // The viewer is in a rail: refresh the hero and add late rails without touching focus.
@@ -473,16 +475,19 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
     /** Kids mode home: what the parent allowed, so the first screen is never empty. */
     private void addKidsRails() {
         List<XtreamMediaItem> channels = Catalog.allItems(host.catalog.cached(XtreamContentType.LIVE));
-        if (!channels.isEmpty()) {
-            addRail(Tr.t("Your channels", "قنواتك"), cards(first(channels)), true, () -> host.openSection(Section.LIVE));
+        if (!channels.isEmpty() && railsColumn.findViewWithTag("kids-live") == null) {
+            addRail(Tr.t("Your channels", "قنواتك"), cards(first(channels)), true, () -> host.openSection(Section.LIVE))
+                    .setTag("kids-live");
         }
         List<XtreamMediaItem> movies = Catalog.latest(Catalog.allItems(host.catalog.cached(XtreamContentType.MOVIE)), KIDS_RAIL_SIZE);
-        if (!movies.isEmpty()) {
-            addRail(Tr.t("Your movies", "أفلامك"), cards(movies), false, () -> host.openSection(Section.VOD));
+        if (!movies.isEmpty() && railsColumn.findViewWithTag("kids-movies") == null) {
+            addRail(Tr.t("Your movies", "أفلامك"), cards(movies), false, () -> host.openSection(Section.VOD))
+                    .setTag("kids-movies");
         }
         List<XtreamMediaItem> series = Catalog.latest(Catalog.allItems(host.catalog.cached(XtreamContentType.SERIES)), KIDS_RAIL_SIZE);
-        if (!series.isEmpty()) {
-            addRail(Tr.t("Your series", "مسلسلاتك"), cards(series), false, () -> host.openSection(Section.SERIES));
+        if (!series.isEmpty() && railsColumn.findViewWithTag("kids-series") == null) {
+            addRail(Tr.t("Your series", "مسلسلاتك"), cards(series), false, () -> host.openSection(Section.SERIES))
+                    .setTag("kids-series");
         }
     }
 

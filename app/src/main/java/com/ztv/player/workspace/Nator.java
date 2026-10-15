@@ -16,13 +16,18 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.ztv.player.ui.Tr;
+
 import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * IPTVnator's design system, ported value-for-value from its dark theme
@@ -194,7 +199,7 @@ public final class Nator {
         TextView view = text(context, value, cssSize, weight, color);
         view.setSingleLine(true);
         view.setEllipsize(TextUtils.TruncateAt.END);
-        // text-align: left (dir="ltr" page): Arabic labels start at the left edge too.
+        // Labels start at the reading-order start edge, whatever script they are in.
         view.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
         return view;
     }
@@ -225,11 +230,23 @@ public final class Nator {
         view.setTextSize(TypedValue.COMPLEX_UNIT_DIP, cssSize * K);
         view.setTextColor(color);
         view.setGravity(Gravity.CENTER);
+        mirror(view, name);
         return view;
     }
 
     public static void setIcon(TextView view, String name) {
         view.setText(glyph(name));
+        mirror(view, name);
+    }
+
+    private static final Set<String> DIRECTIONAL = new HashSet<>(Arrays.asList(
+            "arrow_back", "arrow_forward", "chevron_left", "chevron_right", "navigate_next", "navigate_before",
+            "keyboard_arrow_left", "keyboard_arrow_right", "arrow_back_ios", "arrow_forward_ios", "open_in_new",
+            "playlist_play", "logout", "login", "reply", "redo", "undo", "sort", "notes", "subject", "segment"));
+
+    /** Arrows and other pointing icons face the reading direction. */
+    private static void mirror(TextView view, String name) {
+        view.setScaleX(Tr.arabic() && DIRECTIONAL.contains(name) ? -1f : 1f);
     }
 
     // ─── Shapes ─────────────────────────────────────────────────────────────
@@ -364,15 +381,19 @@ public final class Nator {
         return new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
     }
 
+    /** Margins by reading order: "left" is the start side, so Arabic mirrors them. */
     public static <T extends LinearLayout.LayoutParams> T margins(Context context, T params,
                                                                float left, float top, float right, float bottom) {
-        params.setMargins(px(context, left), px(context, top), px(context, right), px(context, bottom));
+        params.setMargins(0, px(context, top), 0, px(context, bottom));
+        params.setMarginStart(px(context, left));
+        params.setMarginEnd(px(context, right));
         return params;
     }
 
+    /** Padding by reading order: "left" is the start side, so Arabic mirrors it. */
     public static void pad(View view, float left, float top, float right, float bottom) {
         Context context = view.getContext();
-        view.setPadding(px(context, left), px(context, top), px(context, right), px(context, bottom));
+        view.setPaddingRelative(px(context, left), px(context, top), px(context, right), px(context, bottom));
     }
 
     public static View spacer(Context context) {
@@ -415,5 +436,11 @@ public final class Nator {
 
     public static String plural(int count, String singular, String plural) {
         return count + " " + (count == 1 ? singular : plural);
+    }
+
+    /** {@link #plural} with Arabic number agreement (see {@link Tr#count}). */
+    public static String plural(int count, String singular, String plural,
+                                String arOne, String arTwo, String arFew, String arMany) {
+        return Tr.count(count, singular, plural, arOne, arTwo, arFew, arMany);
     }
 }

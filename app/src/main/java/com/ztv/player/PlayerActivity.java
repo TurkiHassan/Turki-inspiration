@@ -52,6 +52,7 @@ import com.ztv.player.data.EpgNowNext;
 import com.ztv.player.data.XtreamMediaItem;
 import com.ztv.player.data.XtreamUrlFactory;
 import com.ztv.player.data.WatchProgressStore;
+import com.ztv.player.ui.Tr;
 import com.ztv.player.ui.ZtvUi;
 
 import org.json.JSONArray;
@@ -217,8 +218,9 @@ public final class PlayerActivity extends Activity {
         loadChannelList();
 
         com.ztv.player.workspace.Nator.init(this);
+        Tr.setArabic("ar".equals(settingsStore.appLanguage()));
         FrameLayout root = new FrameLayout(this);
-        root.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        root.setLayoutDirection(Tr.arabic() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         // Video viewports stay black (IPTVnator player boundary).
         root.setBackgroundColor(0xFF000000);
 
