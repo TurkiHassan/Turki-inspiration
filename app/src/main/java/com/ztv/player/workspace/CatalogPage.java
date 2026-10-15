@@ -22,6 +22,7 @@ import com.ztv.player.data.XtreamContentType;
 import com.ztv.player.data.XtreamMediaItem;
 import com.ztv.player.data.XtreamMediaSection;
 import com.ztv.player.data.WatchProgressStore;
+import com.ztv.player.ui.Tr;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,32 +41,44 @@ import java.util.Set;
  */
 public final class CatalogPage extends Page implements Catalog.LibraryListener {
     private enum Sort {
-        SERVER("Server sorting"),
-        DATE_DESC("Date Added (Latest First)"),
-        DATE_ASC("Date Added (Oldest First)"),
-        NAME_ASC("Name A-Z"),
-        NAME_DESC("Name Z-A"),
-        TOP_RATED("Top rated"),
-        LOWEST_RATED("Lowest rated first");
+        SERVER("Server sorting", "ترتيب الخادم"),
+        DATE_DESC("Date Added (Latest First)", "تاريخ الإضافة (الأحدث أولًا)"),
+        DATE_ASC("Date Added (Oldest First)", "تاريخ الإضافة (الأقدم أولًا)"),
+        NAME_ASC("Name A-Z", "الاسم (أ-ي)"),
+        NAME_DESC("Name Z-A", "الاسم (ي-أ)"),
+        TOP_RATED("Top rated", "الأعلى تقييمًا"),
+        LOWEST_RATED("Lowest rated first", "الأقل تقييمًا أولًا");
 
-        final String label;
+        private final String english;
+        private final String arabic;
 
-        Sort(String label) {
-            this.label = label;
+        Sort(String english, String arabic) {
+            this.english = english;
+            this.arabic = arabic;
+        }
+
+        String label() {
+            return Tr.t(english, arabic);
         }
     }
 
     private enum CategorySort {
-        SERVER("Server sorting", "dns"),
-        NAME_ASC("Name A-Z", "sort_by_alpha"),
-        NAME_DESC("Name Z-A", "sort_by_alpha");
+        SERVER("Server sorting", "ترتيب الخادم", "dns"),
+        NAME_ASC("Name A-Z", "الاسم (أ-ي)", "sort_by_alpha"),
+        NAME_DESC("Name Z-A", "الاسم (ي-أ)", "sort_by_alpha");
 
-        final String label;
+        private final String english;
+        private final String arabic;
         final String icon;
 
-        CategorySort(String label, String icon) {
-            this.label = label;
+        CategorySort(String english, String arabic, String icon) {
+            this.english = english;
+            this.arabic = arabic;
             this.icon = icon;
+        }
+
+        String label() {
+            return Tr.t(english, arabic);
         }
     }
 
@@ -127,12 +140,12 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
     }
 
     private String sectionLabel() {
-        return type == XtreamContentType.LIVE ? "Live TV" : type == XtreamContentType.SERIES ? "Series" : "Movies";
+        return type == XtreamContentType.LIVE ? Tr.t("Live TV", "القنوات") : type == XtreamContentType.SERIES ? Tr.t("Series", "المسلسلات") : Tr.t("Movies", "الأفلام");
     }
 
     private String panelTitle() {
-        return type == XtreamContentType.LIVE ? "Live Categories"
-                : type == XtreamContentType.SERIES ? "Series Categories" : "Movie Categories";
+        return type == XtreamContentType.LIVE ? Tr.t("Live Categories", "فئات القنوات")
+                : type == XtreamContentType.SERIES ? Tr.t("Series Categories", "فئات المسلسلات") : Tr.t("Movie Categories", "فئات الأفلام");
     }
 
     // ─── Search capability ──────────────────────────────────────────────────
@@ -140,7 +153,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
     @Override
     public String searchScope() {
         XtreamMediaSection section = selectedSection();
-        return sectionLabel() + " / " + (section == null ? "All items" : section.title());
+        return sectionLabel() + " / " + (section == null ? Tr.t("All items", "كل العناصر") : section.title());
     }
 
     @Override
@@ -280,14 +293,14 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         LinearLayout header = Nator.row(context);
         Nator.pad(header, 6, 0, 0, 0);
         header.addView(Nator.line(context, panelTitle(), 15.04f, Nator.W600, Nator.ON_SURFACE), new LinearLayout.LayoutParams(0, -2, 1f));
-        View search = host.iconButton("search", 18, "Search categories", v -> toggleCategorySearch());
+        View search = host.iconButton("search", 18, Tr.t("Search categories", "البحث في الفئات"), v -> toggleCategorySearch());
         header.addView(search, Nator.size(context, 30, 30));
-        FrameLayout sortButton = (FrameLayout) host.iconButton(categorySort.icon, 18, "Sort categories", v -> showCategorySortMenu(v));
+        FrameLayout sortButton = (FrameLayout) host.iconButton(categorySort.icon, 18, Tr.t("Sort categories", "ترتيب الفئات"), v -> showCategorySortMenu(v));
         sortIcon = (TextView) sortButton.getChildAt(0);
         header.addView(sortButton, Nator.size(context, 30, 30));
-        header.addView(host.iconButton("tune", 18, "Manage categories", v -> showManageCategories()), Nator.size(context, 30, 30));
+        header.addView(host.iconButton("tune", 18, Tr.t("Manage categories", "إدارة الفئات"), v -> showManageCategories()), Nator.size(context, 30, 30));
         if (type == XtreamContentType.LIVE) {
-            header.addView(host.iconButton("chevron_left", 18, "Hide panels", v -> collapsePanels()), Nator.size(context, 30, 30));
+            header.addView(host.iconButton("chevron_left", 18, Tr.t("Hide panels", "إخفاء القوائم"), v -> collapsePanels()), Nator.size(context, 30, 30));
         }
         panel.addView(header, new LinearLayout.LayoutParams(-1, Nator.px(context, 36)));
         panel.addView(Nator.hairline(context, Nator.OUTLINE_VARIANT), Nator.margins(context, new LinearLayout.LayoutParams(-1, Math.max(1, Nator.px(context, 1))), 0, 6, 0, 6));
@@ -300,7 +313,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         filter.setBackground(null);
         filter.setPadding(0, 0, 0, 0);
         filter.setSingleLine(true);
-        filter.setHint("Filter categories");
+        filter.setHint(Tr.t("Filter categories", "تصفية الفئات"));
         filter.setHintTextColor(Nator.BODY);
         filter.setTextColor(Nator.ON_SURFACE);
         filter.setTypeface(Nator.face(Nator.W400));
@@ -343,11 +356,11 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         categoryList.setOnKeyInterceptListener(event -> {
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
                 rememberCategoryPosition();
-                if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                if (event.getKeyCode() == Widgets.forwardKey()) {
                     focusContentFromCategory();
                     return true;
                 }
-                if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
+                if (event.getKeyCode() == Widgets.backKey()) {
                     focusRail();
                     return true;
                 }
@@ -378,7 +391,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
     private void showCategorySortMenu(View anchor) {
         LinearLayout menu = host.menuPanel();
         for (CategorySort option : CategorySort.values()) {
-            host.menuItem(menu, option.label, option.icon, option == categorySort, () -> {
+            host.menuItem(menu, option.label(), option.icon, option == categorySort, () -> {
                 categorySort = option;
                 Nator.setIcon(sortIcon, option.icon);
                 refreshCategoryRows();
@@ -494,15 +507,15 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
 
     private void showError() {
         contentRoot.removeAllViews();
-        LinearLayout box = Widgets.emptyState(context, "cloud_off", "Portal unavailable",
-                "The portal could not be reached. Check the server URL or retry when the source is available again.");
+        LinearLayout box = Widgets.emptyState(context, "cloud_off", Tr.t("Portal unavailable", "تعذّر الوصول إلى الخادم"),
+                Tr.t("The portal could not be reached. Check the server URL or retry when the source is available again.", "تعذّر الوصول إلى الخادم. تحقق من عنوان الخادم أو أعد المحاولة حين يعود المصدر متاحًا."));
         LinearLayout actions = Nator.row(context);
         actions.setGravity(Gravity.CENTER);
-        actions.addView(Widgets.outlinedPill(context, null, "Home", () -> host.openSection(Section.DASHBOARD)),
+        actions.addView(Widgets.outlinedPill(context, null, Tr.t("Home", "الرئيسية"), () -> host.openSection(Section.DASHBOARD)),
                 Nator.margins(context, Nator.wrap(), 0, 0, 8, 0));
-        actions.addView(Widgets.outlinedPill(context, null, "Playlist Settings", () -> host.openSection(Section.SOURCES)));
+        actions.addView(Widgets.outlinedPill(context, null, Tr.t("Playlist Settings", "إعدادات الاشتراك"), () -> host.openSection(Section.SOURCES)));
         box.addView(actions, Nator.margins(context, Nator.wrap(), 0, 22, 0, 0));
-        TextView retry = host.dialogFilledButton("Retry", () -> {
+        TextView retry = host.dialogFilledButton(Tr.t("Retry", "إعادة المحاولة"), () -> {
             contentRoot.removeAllViews();
             contentRoot.addView(gridSkeleton(), new FrameLayout.LayoutParams(-1, -1));
             host.catalog.load(type, true, this);
@@ -601,10 +614,10 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         }
         List<XtreamMediaItem> items = currentItems();
         XtreamMediaSection section = selectedSection();
-        headerTitle.setText(section == null ? "All items" : section.title());
-        headerSubtitle.setText(Nator.plural(items.size(), "item", "items"));
+        headerTitle.setText(section == null ? Tr.t("All items", "كل العناصر") : section.title());
+        headerSubtitle.setText(Nator.plural(items.size(), "item", "items", "عنصر واحد", "عنصران", "عناصر", "عنصر"));
         if (sortChipLabel != null) {
-            sortChipLabel.setText(sort.label);
+            sortChipLabel.setText(sort.label());
         }
         if (ratingChip != null) {
             ratingChip.setVisibility(minRating > 0 ? View.VISIBLE : View.GONE);
@@ -632,7 +645,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         band.setBackgroundColor(Nator.WIDGET_HEADER_BG);
         Nator.pad(band, 16, 8, 16, 8);
         LinearLayout titleRow = Nator.row(context);
-        headerTitle = Nator.line(context, "All items", 15.2f, Nator.W600, Nator.HEADING);
+        headerTitle = Nator.line(context, Tr.t("All items", "كل العناصر"), 15.2f, Nator.W600, Nator.HEADING);
         titleRow.addView(headerTitle);
         if (live) {
             headerSubtitle = Nator.countChip(context, "", Nator.BODY);
@@ -652,7 +665,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
             Nator.pad(sortChip, 10, 0, 12, 0);
             Nator.focusable(sortChip, 999);
             sortChip.addView(Nator.icon(context, "sort", 18, Nator.ON_SURFACE_VARIANT), Nator.margins(context, Nator.size(context, 18, 18), 0, 0, 6, 0));
-            sortChipLabel = Nator.line(context, sort.label, 12.48f, Nator.W600, Nator.ON_SURFACE_VARIANT);
+            sortChipLabel = Nator.line(context, sort.label(), 12.48f, Nator.W600, Nator.ON_SURFACE_VARIANT);
             sortChip.addView(sortChipLabel);
             sortChip.setOnClickListener(v -> showRefine(v));
             chips.addView(sortChip, Nator.size(context, -2, 34));
@@ -675,7 +688,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
             Nator.pad(refine, 13, 0, 16, 0);
             Nator.focusable(refine, 999);
             refine.addView(Nator.icon(context, "tune", 18, Nator.ON_SURFACE), Nator.margins(context, Nator.size(context, 18, 18), 0, 0, 8, 0));
-            refine.addView(Nator.text(context, "Refine", 14, Nator.W500, Nator.ON_SURFACE));
+            refine.addView(Nator.text(context, Tr.t("Refine", "تصفية"), 14, Nator.W500, Nator.ON_SURFACE));
             refine.setOnClickListener(v -> showRefine(v));
             chips.addView(refine, Nator.size(context, -2, 40));
             band.addView(chips, Nator.margins(context, Nator.matchWidth(), 0, 8, 0, 0));
@@ -697,7 +710,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
             @Override
             public void onMenu(XtreamMediaItem item, int position) {
                 boolean nowFavorite = host.favorites.toggle(item);
-                host.snack(nowFavorite ? "Added to favorites" : "Removed from favorites");
+                host.snack(nowFavorite ? Tr.t("Added to favorites", "أُضيف إلى المفضلة") : Tr.t("Removed from favorites", "أُزيل من المفضلة"));
             }
         });
         Map<Integer, WatchProgressStore.EntrySnapshot> snapshots =
@@ -723,8 +736,8 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         FrameLayout gridFrame = new FrameLayout(context);
         gridFrame.setClipChildren(false);
         gridFrame.addView(grid, new FrameLayout.LayoutParams(-1, -1));
-        emptyView = Widgets.emptyState(context, "search_off", "Nothing found",
-                query.isEmpty() ? "This category has no items." : "No results match your search.");
+        emptyView = Widgets.emptyState(context, "search_off", Tr.t("Nothing found", "لا توجد نتائج"),
+                query.isEmpty() ? Tr.t("This category has no items.", "هذه الفئة فارغة.") : Tr.t("No results match your search.", "لا نتائج تطابق بحثك."));
         emptyView.setVisibility(View.GONE);
         gridFrame.addView(emptyView, new FrameLayout.LayoutParams(-1, -1));
         column.addView(gridFrame, new LinearLayout.LayoutParams(-1, 0, 1f));
@@ -736,20 +749,20 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
     /** Refine menu: "Sort by" + "Minimum rating" sections. */
     private void showRefine(View anchor) {
         LinearLayout menu = host.menuPanel();
-        menu.addView(menuSectionLabel("Sort by"));
+        menu.addView(menuSectionLabel(Tr.t("Sort by", "الترتيب حسب")));
         for (Sort option : Sort.values()) {
             if (option == Sort.SERVER) {
                 continue;
             }
-            host.menuItem(menu, option.label, null, option == sort, () -> {
+            host.menuItem(menu, option.label(), null, option == sort, () -> {
                 sort = option;
                 renderContent(true);
             });
         }
-        menu.addView(menuSectionLabel("Minimum rating"));
+        menu.addView(menuSectionLabel(Tr.t("Minimum rating", "أقل تقييم")));
         int[] ratings = {0, 5, 6, 7, 8};
         for (int value : ratings) {
-            host.menuItem(menu, value == 0 ? "Any rating" : value + ".0 and higher", value == 0 ? null : "star",
+            host.menuItem(menu, value == 0 ? Tr.t("Any rating", "أي تقييم") : Tr.t(value + ".0 and higher", value + ".0 فأعلى"), value == 0 ? null : "star",
                     value == minRating, () -> {
                         minRating = value;
                         renderContent(true);
@@ -806,7 +819,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         }
         XtreamMediaSection section = selectedSection();
         List<XtreamMediaItem> items = currentItems();
-        channelTitle.setText(section == null ? "Channels" : section.title());
+        channelTitle.setText(section == null ? Tr.t("Channels", "القنوات") : section.title());
         channelCount.setText(String.valueOf(items.size()));
         channelAdapter.setFavoriteIds(host.favorites.idSet(XtreamContentType.LIVE));
         channelAdapter.setItems(items);
@@ -830,8 +843,8 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
         channelCount.setBackground(Nator.pill(context, Nator.REFINE_BG));
         Nator.pad(channelCount, 8, 2, 8, 2);
         header.addView(channelCount, Nator.margins(context, Nator.wrap(), 8, 0, 8, 0));
-        header.addView(host.iconButton("sort_by_alpha", 24, "Sort channels", this::showChannelSortMenu), Nator.size(context, 40, 40));
-        header.addView(host.iconButton("chevron_left", 24, "Hide panels", v -> collapsePanels()), Nator.size(context, 40, 40));
+        header.addView(host.iconButton("sort_by_alpha", 24, Tr.t("Sort channels", "ترتيب القنوات"), this::showChannelSortMenu), Nator.size(context, 40, 40));
+        header.addView(host.iconButton("chevron_left", 24, Tr.t("Hide panels", "إخفاء القوائم"), v -> collapsePanels()), Nator.size(context, 40, 40));
         channelSidebar.addView(header, new LinearLayout.LayoutParams(-1, Nator.px(context, 56)));
 
         channelAdapter = new ChannelRowAdapter(context, host.catalog, host.favorites.idSet(XtreamContentType.LIVE),
@@ -850,7 +863,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
                     public void onToggleFavorite(XtreamMediaItem item, int position) {
                         boolean nowFavorite = host.favorites.toggle(item);
                         channelAdapter.setFavoriteIds(host.favorites.idSet(XtreamContentType.LIVE));
-                        host.snack(nowFavorite ? "Added to favorites" : "Removed from favorites");
+                        host.snack(nowFavorite ? Tr.t("Added to favorites", "أُضيف إلى المفضلة") : Tr.t("Removed from favorites", "أُزيل من المفضلة"));
                     }
 
                     @Override
@@ -875,13 +888,13 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
             if (Widgets.escapeEdge(channelList, event, 1, false)) {
                 return true;
             }
-            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == Widgets.backKey()
                     && !panelsCollapsed && categoryList != null) {
                 rememberChannelPosition();
                 focusCategoryList();
                 return true;
             }
-            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == Widgets.forwardKey()) {
                 rememberChannelPosition();
                 focusInlinePreview();
                 return true;
@@ -901,7 +914,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
             if (event.getAction() != KeyEvent.ACTION_DOWN) {
                 return false;
             }
-            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+            if (keyCode == Widgets.backKey()) {
                 focusChannelList();
                 return true;
             }
@@ -913,13 +926,15 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
             return false;
         });
         playerArea.addView(inlinePlayer, new FrameLayout.LayoutParams(-1, -1));
-        LinearLayout idle = Widgets.emptyState(context, "live_tv", "Select a channel", "Press OK on a channel to start watching. Press OK again for full screen.");
+        LinearLayout idle = Widgets.emptyState(context, "live_tv", Tr.t("Select a channel", "اختر قناة"), Tr.t("Press OK on a channel to start watching. Press OK again for full screen.", "اضغط OK على قناة لبدء المشاهدة، واضغط OK مرة أخرى لملء الشاشة."));
         idle.setTag("idle");
         playerArea.addView(idle, new FrameLayout.LayoutParams(-1, -1));
-        restoreButton = host.iconButton("chevron_right", 24, "Show panels", v -> expandPanels());
+        restoreButton = host.iconButton("chevron_right", 24, Tr.t("Show panels", "إظهار القوائم"), v -> expandPanels());
         restoreButton.setBackground(Nator.states(Nator.oval(0x99000000), Nator.oval(0xCC000000)));
         FrameLayout.LayoutParams restoreParams = new FrameLayout.LayoutParams(Nator.px(context, 40), Nator.px(context, 40), Gravity.TOP | Gravity.START);
-        restoreParams.setMargins(Nator.px(context, 12), Nator.px(context, 12), 0, 0);
+        restoreParams.setMargins(0, Nator.px(context, 12), 0, 0);
+        restoreParams.setMarginStart(Nator.px(context, 12));
+        restoreParams.setMarginEnd(0);
         playerArea.addView(restoreButton, restoreParams);
         restoreButton.setVisibility(View.GONE);
         liveLayout.addView(playerArea, new LinearLayout.LayoutParams(0, -1, 1f));
@@ -928,7 +943,7 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
     private void showChannelSortMenu(View anchor) {
         LinearLayout menu = host.menuPanel();
         Sort[] options = {Sort.SERVER, Sort.NAME_ASC, Sort.NAME_DESC};
-        String[] labels = {"Server order", "Name A-Z", "Name Z-A"};
+        String[] labels = {Tr.t("Server order", "ترتيب الخادم"), Tr.t("Name A-Z", "الاسم (أ-ي)"), Tr.t("Name Z-A", "الاسم (ي-أ)")};
         for (int i = 0; i < options.length; i++) {
             Sort option = options[i];
             host.menuItem(menu, labels[i], null, sort == option, () -> {

@@ -13,6 +13,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.ztv.player.data.SettingsStore;
+import com.ztv.player.ui.Tr;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,11 @@ final class VoiceSearchDialog implements RecognitionListener {
 
     private static final int MIC_IDLE = 0xFF3A4152;
     private static final int MIC_LIVE = 0xFFE5484D;
-    private static final String HINT = "Say a channel, movie or series";
+
+    private static String hint() {
+        return Tr.t("Say a channel, movie or series", "قل اسم قناة أو فيلم أو مسلسل");
+    }
+
     /** Google's recognizer reads this undocumented extra for extra spoken languages. */
     private static final String EXTRA_ADDITIONAL_LANGUAGES = "android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES";
 
@@ -64,7 +69,7 @@ final class VoiceSearchDialog implements RecognitionListener {
         pulse.setBackground(Nator.oval(Nator.alpha(MIC_LIVE, 0.22f)));
         stage.addView(pulse, new FrameLayout.LayoutParams(Nator.px(host, 96), Nator.px(host, 96), Gravity.CENTER));
         mic = new FrameLayout(host);
-        mic.setContentDescription("Listen again");
+        mic.setContentDescription(Tr.t("Listen again", "استمع مرة أخرى"));
         Nator.focusable(mic, 999);
         mic.setBackground(Nator.oval(MIC_IDLE));
         mic.addView(Nator.icon(host, "mic", 40, 0xFFFFFFFF), new FrameLayout.LayoutParams(-1, -1));
@@ -73,10 +78,10 @@ final class VoiceSearchDialog implements RecognitionListener {
         stage.addView(mic, new FrameLayout.LayoutParams(Nator.px(host, 84), Nator.px(host, 84), Gravity.CENTER));
         card.addView(stage, Nator.size(host, 140, 120));
 
-        status = Nator.text(host, "Starting the microphone…", 20, Nator.W600, Nator.HEADING);
+        status = Nator.text(host, Tr.t("Starting the microphone…", "جارٍ تشغيل الميكروفون…"), 20, Nator.W600, Nator.HEADING);
         status.setGravity(Gravity.CENTER);
         card.addView(status, Nator.margins(host, Nator.matchWidth(), 0, 10, 0, 0));
-        transcript = Nator.text(host, HINT, 16, Nator.W400, Nator.BODY);
+        transcript = Nator.text(host, hint(), 16, Nator.W400, Nator.BODY);
         transcript.setGravity(Gravity.CENTER);
         transcript.setTextAlignment(View.TEXT_ALIGNMENT_GRAVITY);
         transcript.setMinLines(2);
@@ -88,7 +93,7 @@ final class VoiceSearchDialog implements RecognitionListener {
 
         LinearLayout actions = Nator.row(host);
         actions.setGravity(Gravity.END);
-        TextView cancel = host.dialogTextButton("Cancel", host::dismissTopOverlay);
+        TextView cancel = host.dialogTextButton(Tr.t("Cancel", "إلغاء"), host::dismissTopOverlay);
         Widgets.trapFocus(cancel, false, true, true, true);
         actions.addView(cancel);
         card.addView(actions, Nator.margins(host, Nator.matchWidth(), 0, 10, 0, 0));
@@ -102,7 +107,7 @@ final class VoiceSearchDialog implements RecognitionListener {
     /** Auto hears both languages; Arabic also finds Latin channel names (see SearchMatcher). */
     private void renderLanguages() {
         languages.removeAllViews();
-        String[] labels = {"Auto", "العربية", "English"};
+        String[] labels = {Tr.t("Auto", "تلقائي"), "العربية", "English"};
         String[] tags = {SettingsStore.VOICE_BILINGUAL, SettingsStore.VOICE_ARABIC, SettingsStore.VOICE_ENGLISH};
         for (int i = 0; i < labels.length; i++) {
             String tag = tags[i];
@@ -154,8 +159,8 @@ final class VoiceSearchDialog implements RecognitionListener {
         intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
         intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, host.getPackageName());
         putLanguage(intent, language);
-        status.setText("Starting the microphone…");
-        transcript.setText(HINT);
+        status.setText(Tr.t("Starting the microphone…", "جارٍ تشغيل الميكروفون…"));
+        transcript.setText(hint());
         transcript.setTextColor(Nator.BODY);
         setLive(false);
         recognizer.startListening(intent);
@@ -180,8 +185,8 @@ final class VoiceSearchDialog implements RecognitionListener {
     }
 
     private void listenInBoth() {
-        status.setText("Starting the microphone…");
-        transcript.setText(HINT);
+        status.setText(Tr.t("Starting the microphone…", "جارٍ تشغيل الميكروفون…"));
+        transcript.setText(hint());
         transcript.setTextColor(Nator.BODY);
         setLive(false);
         both = new BilingualRecognizer(host, new BilingualRecognizer.Callback() {
@@ -197,7 +202,7 @@ final class VoiceSearchDialog implements RecognitionListener {
 
             @Override
             public void onCaptured() {
-                status.setText("Searching in Arabic and English…");
+                status.setText(Tr.t("Searching in Arabic and English…", "جارٍ البحث بالعربية والإنجليزية…"));
                 setLive(false);
             }
 
@@ -241,7 +246,7 @@ final class VoiceSearchDialog implements RecognitionListener {
     @Override
     public void onReadyForSpeech(Bundle params) {
         if (open) {
-            status.setText("Listening…");
+            status.setText(Tr.t("Listening…", "أستمع إليك…"));
             setLive(true);
         }
     }
@@ -266,7 +271,7 @@ final class VoiceSearchDialog implements RecognitionListener {
     @Override
     public void onEndOfSpeech() {
         if (open) {
-            status.setText("Searching…");
+            status.setText(Tr.t("Searching…", "جارٍ البحث…"));
             setLive(false);
         }
     }
@@ -280,25 +285,25 @@ final class VoiceSearchDialog implements RecognitionListener {
         switch (error) {
             case SpeechRecognizer.ERROR_NO_MATCH:
             case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
-                status.setText("Didn't catch that");
+                status.setText(Tr.t("Didn't catch that", "لم ألتقط ما قلته"));
                 break;
             case SpeechRecognizer.ERROR_NETWORK:
             case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
             case SpeechRecognizer.ERROR_SERVER:
-                status.setText("Speech service unreachable");
+                status.setText(Tr.t("Speech service unreachable", "خدمة التعرف على الكلام غير متاحة"));
                 break;
             case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
-                status.setText("Microphone permission needed");
+                status.setText(Tr.t("Microphone permission needed", "يلزم إذن الميكروفون"));
                 break;
             case SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED:
             case SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE:
-                status.setText("This language isn't available");
+                status.setText(Tr.t("This language isn't available", "هذه اللغة غير متاحة"));
                 break;
             default:
-                status.setText("Voice search stopped");
+                status.setText(Tr.t("Voice search stopped", "توقف البحث الصوتي"));
                 break;
         }
-        transcript.setText("Press OK on the mic to try again");
+        transcript.setText(Tr.t("Press OK on the mic to try again", "اضغط OK على الميكروفون للمحاولة مجددًا"));
         transcript.setTextColor(Nator.BODY);
     }
 

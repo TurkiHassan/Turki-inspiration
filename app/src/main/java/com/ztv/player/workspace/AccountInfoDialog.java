@@ -7,6 +7,7 @@ import android.widget.TextView;
 
 import com.ztv.player.data.ServerAddressPolicy;
 import com.ztv.player.data.XtreamAccountInfo;
+import com.ztv.player.ui.Tr;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -30,17 +31,17 @@ final class AccountInfoDialog {
         LinearLayout card = Nator.column(context);
         card.setBackground(Nator.rounded(context, 0xFF121316, 28));
         Nator.pad(card, 24, 22, 24, 18);
-        card.addView(Nator.text(context, "Account info", 20, Nator.W600, Nator.HEADING));
+        card.addView(Nator.text(context, Tr.t("Account info", "معلومات الحساب"), 20, Nator.W600, Nator.HEADING));
         card.addView(Nator.text(context, host.playlistTitle(), 13, Nator.W400, Nator.BODY), Nator.margins(context, Nator.wrap(), 0, 4, 0, 0));
         rows = Nator.column(context);
         rows.setBackground(Nator.roundedStroke(context, Nator.WIDGET_BG, 12, 1, 0x12FFFFFF));
         card.addView(rows, Nator.margins(context, Nator.matchWidth(), 0, 18, 0, 0));
-        row("Server", ServerAddressPolicy.display(host.credentials().host()), Nator.HEADING, 0);
-        row("Username", host.credentials().username(), Nator.HEADING, 0);
-        row("Status", "Loading...", Nator.BODY, 0);
+        row(Tr.t("Server", "الخادم"), ServerAddressPolicy.display(host.credentials().host()), Nator.HEADING, 0);
+        row(Tr.t("Username", "اسم المستخدم"), host.credentials().username(), Nator.HEADING, 0);
+        row(Tr.t("Status", "الحالة"), Tr.t("Loading...", "جارٍ التحميل..."), Nator.BODY, 0);
         LinearLayout actions = Nator.row(context);
         actions.setGravity(Gravity.END);
-        TextView close = host.dialogTextButton("Close", host::dismissTopOverlay);
+        TextView close = host.dialogTextButton(Tr.t("Close", "إغلاق"), host::dismissTopOverlay);
         actions.addView(close);
         card.addView(actions, Nator.margins(context, Nator.matchWidth(), 0, 18, 0, 0));
         host.showDialog(card, 520, null);
@@ -56,20 +57,23 @@ final class AccountInfoDialog {
             rows.removeViewAt(rows.getChildCount() - 1);
         }
         if (info == null) {
-            row("Status", "Unavailable", Nator.ERROR, 0);
+            row(Tr.t("Status", "الحالة"), Tr.t("Unavailable", "غير متاح"), Nator.ERROR, 0);
             return;
         }
         boolean active = "Active".equalsIgnoreCase(info.status());
-        row("Status", info.status().isEmpty() ? "Unknown" : info.status(), active ? Nator.SUCCESS : 0xFFFF8F8F,
+        String status = info.status().isEmpty() ? Tr.t("Unknown", "غير معروف") : active ? Tr.t(info.status(), "فعّال") : info.status();
+        row(Tr.t("Status", "الحالة"), status, active ? Nator.SUCCESS : 0xFFFF8F8F,
                 active ? Nator.alpha(Nator.SUCCESS, 0.14f) : Nator.alpha(0xFFF44336, 0.14f));
         if (info.hasExpiry()) {
             long days = (info.expiryEpochSeconds() * 1000L - System.currentTimeMillis()) / 86_400_000L;
             String date = new SimpleDateFormat("d MMM yyyy", Locale.ENGLISH).format(new Date(info.expiryEpochSeconds() * 1000L));
             int color = days < 0 ? 0xFFFF8F8F : days <= 14 ? 0xFFFBBF24 : Nator.HEADING;
             int tint = days < 0 ? Nator.alpha(0xFFF44336, 0.14f) : days <= 14 ? Nator.alpha(0xFFFBBF24, 0.16f) : 0;
-            row("Expires", date + (days >= 0 ? "  ·  " + days + " days left" : "  ·  expired"), color, tint);
+            row(Tr.t("Expires", "ينتهي"), date + (days >= 0
+                    ? "  ·  " + Tr.t(days + " days left", "باقي " + Tr.count((int) days, "day", "days", "يوم واحد", "يومان", "أيام", "يومًا"))
+                    : "  ·  " + Tr.t("expired", "منتهٍ")), color, tint);
         } else {
-            row("Expires", "Unlimited", Nator.HEADING, 0);
+            row(Tr.t("Expires", "ينتهي"), Tr.t("Unlimited", "بلا حد"), Nator.HEADING, 0);
         }
     }
 

@@ -141,6 +141,7 @@ public final class WorkspaceActivity extends Activity {
         root = new FrameLayout(this);
         root.setLayoutDirection(Tr.arabic() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         root.setBackgroundColor(Nator.SHELL_BG);
+        applyScreenEdges();
         setContentView(root);
         buildShell();
         applyKidsChrome();
@@ -204,6 +205,15 @@ public final class WorkspaceActivity extends Activity {
         switcherView.setFocusable(!on);
         switcherView.setClickable(!on);
         kidsGuard.check();
+    }
+
+    /** Keeps the interface inside the part of the screen the TV actually shows (overscan). */
+    void applyScreenEdges() {
+        android.util.DisplayMetrics metrics = getResources().getDisplayMetrics();
+        float fraction = settings.screenEdgeFraction();
+        int horizontal = Math.round(metrics.widthPixels * fraction);
+        int vertical = Math.round(metrics.heightPixels * fraction);
+        root.setPadding(horizontal, vertical, horizontal, vertical);
     }
 
     /** Settings › General › Language: rebuilds the whole interface in the new language. */
@@ -822,11 +832,16 @@ public final class WorkspaceActivity extends Activity {
         contentFrame = new FrameLayout(this);
         contentFrame.setBackgroundColor(Nator.CONTENT_BG);
         float radius = Nator.fpx(this, 16);
-        // Only the top-left corner is rounded: the outline overhangs the other edges.
+        // Only the corner facing the side panels is rounded: the outline overhangs the other edges.
+        boolean rtl = Tr.arabic();
         contentFrame.setOutlineProvider(new ViewOutlineProvider() {
             @Override
             public void getOutline(View view, Outline outline) {
-                outline.setRoundRect(0, 0, view.getWidth() + (int) radius, view.getHeight() + (int) radius, radius);
+                if (rtl) {
+                    outline.setRoundRect(-(int) radius, 0, view.getWidth(), view.getHeight() + (int) radius, radius);
+                } else {
+                    outline.setRoundRect(0, 0, view.getWidth() + (int) radius, view.getHeight() + (int) radius, radius);
+                }
             }
         });
         contentFrame.setClipToOutline(true);
@@ -941,7 +956,7 @@ public final class WorkspaceActivity extends Activity {
         button.setOnClickListener(v -> openSection(section));
         button.setOnFocusChangeListener((v, focused) -> styleRail(button, focused, isRailActive(section)));
         button.setOnKeyListener((v, keyCode, event) -> {
-            if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && top() != null) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == Widgets.forwardKey() && top() != null) {
                 top().focusFromRail();
                 return true;
             }
@@ -1358,11 +1373,11 @@ public final class WorkspaceActivity extends Activity {
         card.addView(Nator.text(this, Tr.t("Remote shortcuts", "اختصارات جهاز التحكم"), 20, Nator.W600, Nator.HEADING));
         String[][] rows = {
                 {"OK", Tr.t("Open / play the focused item", "فتح العنصر المحدد أو تشغيله")},
-                {"Back", "Previous page, then the rail, then exit"},
+                {Tr.t("Back", "رجوع"), Tr.t("Previous page, then the rail, then exit", "الصفحة السابقة، ثم القائمة الجانبية، ثم الخروج")},
                 {"◀ ▶ ▲ ▼", Tr.t("Move between rail, categories and content", "التنقل بين القائمة الجانبية والفئات والمحتوى")},
                 {"CH+ / CH−", Tr.t("Next / previous channel while playing", "القناة التالية أو السابقة أثناء المشاهدة")},
-                {"Menu", Tr.t("Toggle favorite on the focused item", "إضافة العنصر المحدد إلى المفضلة أو إزالته")},
-                {"Mic / Search", Tr.t("Voice search: say a channel, movie or series", "البحث الصوتي: قل اسم قناة أو فيلم أو مسلسل")},
+                {Tr.t("Menu", "القائمة"), Tr.t("Toggle favorite on the focused item", "إضافة العنصر المحدد إلى المفضلة أو إزالته")},
+                {Tr.t("Mic / Search", "الميكروفون / البحث"), Tr.t("Voice search: say a channel, movie or series", "البحث الصوتي: قل اسم قناة أو فيلم أو مسلسل")},
         };
         for (String[] row : rows) {
             LinearLayout line = Nator.row(this);

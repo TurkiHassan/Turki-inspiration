@@ -11,6 +11,7 @@ import androidx.leanback.widget.VerticalGridView;
 
 import com.ztv.player.data.XtreamContentType;
 import com.ztv.player.data.XtreamMediaItem;
+import com.ztv.player.ui.Tr;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,12 +48,12 @@ public final class CollectionPage extends Page {
 
     @Override
     public String searchScope() {
-        return kind == Kind.FAVORITES ? "Global favorites" : "Recently viewed";
+        return kind == Kind.FAVORITES ? Tr.t("Global favorites", "المفضلة") : Tr.t("Recently viewed", "شوهد مؤخرًا");
     }
 
     @Override
     public String searchPlaceholder() {
-        return "Filter this section...";
+        return Tr.t("Filter this section...", "تصفية هذا القسم...");
     }
 
     @Override
@@ -90,17 +91,17 @@ public final class CollectionPage extends Page {
         LinearLayout column = Nator.column(context);
         LinearLayout header = Nator.row(context);
         Nator.pad(header, 16, 0, 22, 0);
-        header.addView(Nator.text(context, kind == Kind.FAVORITES ? "Favorites" : "Recently viewed", 15.04f, Nator.W600, Nator.ON_SURFACE));
+        header.addView(Nator.text(context, kind == Kind.FAVORITES ? Tr.t("Favorites", "المفضلة") : Tr.t("Recently viewed", "شوهد مؤخرًا"), 15.04f, Nator.W600, Nator.ON_SURFACE));
         header.addView(Nator.spacer(context));
         toggle = Nator.row(context);
         toggle.setBackground(Nator.roundedStroke(context, 0, 28, 1, Nator.OUTLINE));
         toggle.setClipToOutline(true);
-        toggle.addView(scopeButton("playlist_play", "This playlist", false), Nator.size(context, 113, 41));
+        toggle.addView(scopeButton("playlist_play", Tr.t("This playlist", "هذا الاشتراك"), false), Nator.size(context, 113, 41));
         View divider = Nator.hairline(context, Nator.OUTLINE);
         toggle.addView(divider, new LinearLayout.LayoutParams(Math.max(1, Nator.px(context, 1)), -1));
-        toggle.addView(scopeButton("public", "All playlists", true), Nator.size(context, 109, 41));
+        toggle.addView(scopeButton("public", Tr.t("All playlists", "كل الاشتراكات"), true), Nator.size(context, 109, 41));
         header.addView(toggle, Nator.size(context, -2, 43));
-        header.addView(host.iconButton("delete_sweep", 24, kind == Kind.FAVORITES ? "Clear favorites" : "Clear history",
+        header.addView(host.iconButton("delete_sweep", 24, kind == Kind.FAVORITES ? Tr.t("Clear favorites", "مسح المفضلة") : Tr.t("Clear history", "مسح السجل"),
                 v -> confirmClear()), Nator.margins(context, Nator.size(context, 40, 40), 10, 0, 0, 0));
         column.addView(header, new LinearLayout.LayoutParams(-1, Nator.px(context, 66)));
 
@@ -139,9 +140,9 @@ public final class CollectionPage extends Page {
         Widgets.enablePartialRowDown(grid, columns);
         body.addView(grid, new FrameLayout.LayoutParams(-1, -1));
         empty = Widgets.emptyState(context, kind == Kind.FAVORITES ? "favorite_border" : "history",
-                kind == Kind.FAVORITES ? "No favorites yet" : "Nothing watched yet",
-                kind == Kind.FAVORITES ? "Press Menu on any channel, movie or series to add it here."
-                        : "Channels, movies and series you open will show up here.");
+                kind == Kind.FAVORITES ? Tr.t("No favorites yet", "لا مفضلة بعد") : Tr.t("Nothing watched yet", "لم تشاهد شيئًا بعد"),
+                kind == Kind.FAVORITES ? Tr.t("Press Menu on any channel, movie or series to add it here.", "اضغط زر القائمة على أي قناة أو فيلم أو مسلسل لإضافته هنا.")
+                        : Tr.t("Channels, movies and series you open will show up here.", "القنوات والأفلام والمسلسلات التي تفتحها ستظهر هنا."));
         empty.setVisibility(View.GONE);
         body.addView(empty, new FrameLayout.LayoutParams(-1, -1));
         column.addView(body, new LinearLayout.LayoutParams(-1, 0, 1f));
@@ -213,10 +214,10 @@ public final class CollectionPage extends Page {
     private void remove(XtreamMediaItem item, int position) {
         if (kind == Kind.FAVORITES) {
             host.favorites.remove(item.type(), item.id());
-            host.snack("Removed from favorites");
+            host.snack(Tr.t("Removed from favorites", "أُزيل من المفضلة"));
         } else {
             host.history.remove(item.type(), item.id());
-            host.snack("Removed from recently viewed");
+            host.snack(Tr.t("Removed from recently viewed", "أُزيل من «شوهد مؤخرًا»"));
         }
         adapter.removeAt(position);
         empty.setVisibility(adapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
@@ -226,14 +227,14 @@ public final class CollectionPage extends Page {
         LinearLayout card = Nator.column(context);
         card.setBackground(Nator.rounded(context, 0xFF121316, 28));
         Nator.pad(card, 24, 24, 24, 18);
-        card.addView(Nator.text(context, kind == Kind.FAVORITES ? "Clear favorites?" : "Clear recently viewed?", 20, Nator.W600, Nator.HEADING));
-        card.addView(Nator.text(context, "This removes every item from this list.", 13.5f, Nator.W400, Nator.BODY),
+        card.addView(Nator.text(context, kind == Kind.FAVORITES ? Tr.t("Clear favorites?", "مسح المفضلة؟") : Tr.t("Clear recently viewed?", "مسح «شوهد مؤخرًا»؟"), 20, Nator.W600, Nator.HEADING));
+        card.addView(Nator.text(context, Tr.t("This removes every item from this list.", "سيُحذف كل ما في هذه القائمة."), 13.5f, Nator.W400, Nator.BODY),
                 Nator.margins(context, Nator.matchWidth(), 0, 12, 0, 0));
         LinearLayout actions = Nator.row(context);
         actions.setGravity(Gravity.END);
-        TextView cancel = host.dialogTextButton("Cancel", host::dismissTopOverlay);
+        TextView cancel = host.dialogTextButton(Tr.t("Cancel", "إلغاء"), host::dismissTopOverlay);
         actions.addView(cancel, Nator.margins(context, Nator.wrap(), 0, 0, 8, 0));
-        actions.addView(host.dialogFilledButton("Clear", () -> {
+        actions.addView(host.dialogFilledButton(Tr.t("Clear", "مسح"), () -> {
             host.dismissTopOverlay();
             for (XtreamContentType type : new XtreamContentType[]{XtreamContentType.LIVE, XtreamContentType.MOVIE, XtreamContentType.SERIES}) {
                 if (kind == Kind.FAVORITES) {

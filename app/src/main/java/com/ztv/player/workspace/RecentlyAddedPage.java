@@ -10,6 +10,7 @@ import androidx.leanback.widget.HorizontalGridView;
 import com.ztv.player.data.XtreamContentType;
 import com.ztv.player.data.XtreamMediaItem;
 import com.ztv.player.data.XtreamMediaSection;
+import com.ztv.player.ui.Tr;
 
 import java.util.List;
 
@@ -32,12 +33,12 @@ public final class RecentlyAddedPage extends Page implements Catalog.LibraryList
 
     @Override
     public String searchScope() {
-        return "Recently added";
+        return Tr.t("Recently added", "أُضيف حديثًا");
     }
 
     @Override
     public String searchPlaceholder() {
-        return "Filter this section...";
+        return Tr.t("Filter this section...", "تصفية هذا القسم...");
     }
 
     @Override
@@ -48,7 +49,7 @@ public final class RecentlyAddedPage extends Page implements Catalog.LibraryList
         LinearLayout column = Nator.column(context);
         column.setClipChildren(false);
         Nator.pad(column, 28, 24, 28, 28);
-        column.addView(Nator.text(context, "Recently added", 24, Nator.W600, Nator.HEADING));
+        column.addView(Nator.text(context, Tr.t("Recently added", "أُضيف حديثًا"), 24, Nator.W600, Nator.HEADING));
         rails = Nator.column(context);
         rails.setClipChildren(false);
         column.addView(rails, Nator.matchWidth());
@@ -93,12 +94,12 @@ public final class RecentlyAddedPage extends Page implements Catalog.LibraryList
     private void render() {
         rails.removeAllViews();
         firstFocus = null;
-        addRail("Movies", XtreamContentType.MOVIE, "Browse all movies", Section.VOD);
-        addRail("Live TV", XtreamContentType.LIVE, "Browse all live TV", Section.LIVE);
-        addRail("Series", XtreamContentType.SERIES, "Browse all series", Section.SERIES);
+        addRail(Tr.t("Movies", "الأفلام"), XtreamContentType.MOVIE, Tr.t("Browse all movies", "تصفح كل الأفلام"), Section.VOD);
+        addRail(Tr.t("Live TV", "القنوات"), XtreamContentType.LIVE, Tr.t("Browse all live TV", "تصفح كل القنوات"), Section.LIVE);
+        addRail(Tr.t("Series", "المسلسلات"), XtreamContentType.SERIES, Tr.t("Browse all series", "تصفح كل المسلسلات"), Section.SERIES);
         if (rails.getChildCount() == 0) {
-            rails.addView(Widgets.emptyState(context, "new_releases", "Nothing new yet",
-                    "Recently added titles appear here once the playlist has loaded."), Nator.margins(context, Nator.matchWidth(), 0, 80, 0, 0));
+            rails.addView(Widgets.emptyState(context, "new_releases", Tr.t("Nothing new yet", "لا جديد بعد"),
+                    Tr.t("Recently added titles appear here once the playlist has loaded.", "تظهر هنا العناوين المضافة حديثًا بعد تحميل الاشتراك.")), Nator.margins(context, Nator.matchWidth(), 0, 80, 0, 0));
         }
     }
 

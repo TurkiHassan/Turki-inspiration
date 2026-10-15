@@ -220,7 +220,8 @@ public final class PlayerActivity extends Activity {
         com.ztv.player.workspace.Nator.init(this);
         Tr.setArabic("ar".equals(settingsStore.appLanguage()));
         FrameLayout root = new FrameLayout(this);
-        root.setLayoutDirection(Tr.arabic() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+        // The player keeps a left-to-right timeline in every language; only its text is translated.
+        root.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         // Video viewports stay black (IPTVnator player boundary).
         root.setBackgroundColor(0xFF000000);
 
@@ -351,7 +352,7 @@ public final class PlayerActivity extends Activity {
             epgMeter.set(EpgNowNext.progressPercent(now, nowSeconds));
         }
         StringBuilder nowLine = new StringBuilder();
-        nowLine.append("Now: ").append(now.title());
+        nowLine.append(Tr.t("Now: ", "الآن: ")).append(now.title());
         if (!now.start().isEmpty()) {
             nowLine.append("  (").append(now.start()).append(" – ").append(now.end()).append(")");
         }
@@ -392,11 +393,11 @@ public final class PlayerActivity extends Activity {
         errorHeadline.setGravity(Gravity.CENTER);
         errorHeadline.setVisibility(View.GONE);
 
-        errorText = com.ztv.player.workspace.Nator.text(this, "This stream could not be played", 16.8f,
+        errorText = com.ztv.player.workspace.Nator.text(this, Tr.t("This stream could not be played", "تعذّر تشغيل هذا البث"), 16.8f,
                 com.ztv.player.workspace.Nator.W500, com.ztv.player.workspace.Nator.PLAYER_TEXT);
         errorText.setGravity(Gravity.CENTER);
 
-        TextView retry = com.ztv.player.workspace.Nator.text(this, "Retry", 14,
+        TextView retry = com.ztv.player.workspace.Nator.text(this, Tr.t("Retry", "إعادة المحاولة"), 14,
                 com.ztv.player.workspace.Nator.W500, 0xFF002F65);
         retry.setGravity(Gravity.CENTER);
         retry.setBackground(com.ztv.player.workspace.Nator.states(
@@ -708,7 +709,7 @@ public final class PlayerActivity extends Activity {
         boolean providerRejection = PlaybackFailurePolicy.isProviderRejection(httpStatus);
         if (PlaybackFailurePolicy.shouldRetry(providerRejection, retryCount, MAX_RETRIES_PER_HOST)) {
             retryCount++;
-            errorText.setText("Reconnecting (" + retryCount + "/" + MAX_RETRIES_PER_HOST + ")...");
+            errorText.setText(Tr.t("Reconnecting (", "جارٍ إعادة الاتصال (") + retryCount + "/" + MAX_RETRIES_PER_HOST + ")...");
             showProgress(true);
             handler.postDelayed(() -> {
                 if (player != null) {
@@ -721,7 +722,7 @@ public final class PlayerActivity extends Activity {
         if (PlaybackFailurePolicy.shouldFailOver(providerRejection, error.errorCode)
                 && selectNextPlaybackHost()) {
             retryCount = 0;
-            errorText.setText("Switching to a backup server...");
+            errorText.setText(Tr.t("Switching to a backup server...", "جارٍ التحويل إلى خادم احتياطي..."));
             showProgress(true);
             handler.postDelayed(this::startPlayback, 600L);
             return;
@@ -739,14 +740,17 @@ public final class PlayerActivity extends Activity {
         boolean providerAnswered = httpStatus >= 400;
         if (errorHeadline != null) {
             errorHeadline.setText(providerAnswered
-                    ? "تعذّر تشغيل هذا العنوان — المزوّد ردّ بـ " + httpStatus
-                    : "تعذّر تشغيل هذا العنوان");
+                    ? Tr.t("This title can't be played — the provider answered " + httpStatus,
+                            "تعذّر تشغيل هذا العنوان — المزوّد ردّ بـ " + httpStatus)
+                    : Tr.t("This title can't be played", "تعذّر تشغيل هذا العنوان"));
             errorHeadline.setVisibility(View.VISIBLE);
         }
         errorText.setText(providerAnswered
-                ? "The provider refused this stream (HTTP " + httpStatus
-                        + "). This title is unavailable on the provider side."
-                : "Stream unavailable. No owner-managed server could play it.");
+                ? Tr.t("The provider refused this stream (HTTP " + httpStatus
+                        + "). This title is unavailable on the provider side.",
+                        "رفض المزوّد هذا البث (HTTP " + httpStatus + "). هذا العنوان غير متاح لدى المزوّد.")
+                : Tr.t("Stream unavailable. No owner-managed server could play it.",
+                        "البث غير متاح. لم يتمكن أي خادم من تشغيله."));
         showError();
     }
 
@@ -837,13 +841,13 @@ public final class PlayerActivity extends Activity {
         row.addView(shell, com.ztv.player.workspace.Nator.margins(ctx, com.ztv.player.workspace.Nator.size(ctx, 56, 56), 0, 0, 14, 0));
 
         LinearLayout textStack = com.ztv.player.workspace.Nator.column(ctx);
-        channelKicker = com.ztv.player.workspace.Nator.text(ctx, "LIVE", 11, com.ztv.player.workspace.Nator.W600, com.ztv.player.workspace.Nator.PLAYER_MUTED);
+        channelKicker = com.ztv.player.workspace.Nator.text(ctx, Tr.t("LIVE", "مباشر"), 11, com.ztv.player.workspace.Nator.W600, com.ztv.player.workspace.Nator.PLAYER_MUTED);
         channelKicker.setLetterSpacing(0.12f);
         channelKicker.setFontFeatureSettings("tnum");
         textStack.addView(channelKicker);
         titleText = com.ztv.player.workspace.Nator.line(ctx, channelName == null ? "ZTV" : channelName, 22, com.ztv.player.workspace.Nator.W600, com.ztv.player.workspace.Nator.PLAYER_TEXT);
         textStack.addView(titleText, com.ztv.player.workspace.Nator.margins(ctx, com.ztv.player.workspace.Nator.matchWidth(), 0, 4, 0, 0));
-        epgText = com.ztv.player.workspace.Nator.text(ctx, "Live channel", 13, com.ztv.player.workspace.Nator.W400, 0xFFB5BBCB);
+        epgText = com.ztv.player.workspace.Nator.text(ctx, Tr.t("Live channel", "قناة مباشرة"), 13, com.ztv.player.workspace.Nator.W400, 0xFFB5BBCB);
         epgText.setMaxLines(2);
         epgText.setEllipsize(android.text.TextUtils.TruncateAt.END);
         textStack.addView(epgText, com.ztv.player.workspace.Nator.margins(ctx, com.ztv.player.workspace.Nator.matchWidth(), 0, 4, 0, 0));
@@ -858,7 +862,7 @@ public final class PlayerActivity extends Activity {
         View dot = new View(ctx);
         dot.setBackground(com.ztv.player.workspace.Nator.oval(0xFFFFFFFF));
         live.addView(dot, com.ztv.player.workspace.Nator.margins(ctx, com.ztv.player.workspace.Nator.size(ctx, 6, 6), 0, 0, 5, 0));
-        live.addView(com.ztv.player.workspace.Nator.text(ctx, "LIVE", 10.56f, com.ztv.player.workspace.Nator.W700, 0xFFFFFFFF));
+        live.addView(com.ztv.player.workspace.Nator.text(ctx, Tr.t("LIVE", "مباشر"), 10.56f, com.ztv.player.workspace.Nator.W700, 0xFFFFFFFF));
         row.addView(live);
         panel.addView(row, com.ztv.player.workspace.Nator.matchWidth());
 
@@ -894,7 +898,7 @@ public final class PlayerActivity extends Activity {
             com.ztv.player.ui.PosterLoader.load(logoUrl, channelLogo, false);
         }
         channelKicker.setText(channelIndex >= 0 && !channelList.isEmpty()
-                ? "CHANNEL " + (channelIndex + 1) + "  ·  " + channelList.size() : "LIVE TV");
+                ? Tr.t("CHANNEL ", "القناة ") + (channelIndex + 1) + "  ·  " + channelList.size() : Tr.t("LIVE TV", "بث مباشر"));
     }
 
     private void showLiveInfoTemporarily() {
@@ -1120,9 +1124,9 @@ public final class PlayerActivity extends Activity {
         if (metaView != null) {
             String mediaTypeName = getIntent().getStringExtra(EXTRA_MEDIA_TYPE);
             String typeLabel = XtreamContentType.EPISODE.name().equals(mediaTypeName)
-                    ? "Episode"
-                    : "Movie";
-            metaView.setText(("Now playing  ·  " + typeLabel).toUpperCase(java.util.Locale.ROOT));
+                    ? Tr.t("Episode", "حلقة")
+                    : Tr.t("Movie", "فيلم");
+            metaView.setText((Tr.t("Now playing  ·  ", "يُعرض الآن  ·  ") + typeLabel).toUpperCase(java.util.Locale.ROOT));
         }
     }
 

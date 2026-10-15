@@ -3,6 +3,8 @@ package com.ztv.player.workspace;
 import android.view.KeyEvent;
 import android.view.View;
 
+import com.ztv.player.ui.Tr;
+
 /**
  * One routed workspace view (IPTVnator's router-outlet page). The shell owns the rail,
  * the header and the frame; a page supplies the optional context panel and the content.
@@ -50,7 +52,7 @@ public abstract class Page {
     }
 
     public String searchPlaceholder() {
-        return "Search in this section...";
+        return Tr.t("Search in this section...", "ابحث في هذا القسم...");
     }
 
     public String searchQuery() {

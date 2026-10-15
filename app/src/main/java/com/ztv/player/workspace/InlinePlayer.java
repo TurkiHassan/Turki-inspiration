@@ -24,6 +24,7 @@ import androidx.media3.ui.PlayerView;
 import com.ztv.player.PlaybackBufferPolicy;
 import com.ztv.player.PlayerRenderers;
 import com.ztv.player.data.XtreamContentType;
+import com.ztv.player.ui.Tr;
 
 /**
  * IPTVnator's embedded web player (`app-web-player-view`) for the live layout: black
@@ -49,7 +50,7 @@ public final class InlinePlayer extends FrameLayout {
         super(context);
         setBackgroundColor(0xFF000000);
         setFocusable(true);
-        setContentDescription("Live preview");
+        setContentDescription(Tr.t("Live preview", "معاينة مباشرة"));
         setOnFocusChangeListener((v, focused) -> setForeground(focused ? Nator.focusRing(context, 0) : null));
         view = new PlayerView(context);
         view.setUseController(false);
@@ -72,7 +73,9 @@ public final class InlinePlayer extends FrameLayout {
 
         TextView info = Nator.icon(context, "info_outline", 24, Nator.PLAYER_TEXT);
         LayoutParams infoParams = new LayoutParams(Nator.px(context, 24), Nator.px(context, 24), Gravity.TOP | Gravity.END);
-        infoParams.setMargins(0, Nator.px(context, 16), Nator.px(context, 16), 0);
+        infoParams.setMargins(0, Nator.px(context, 16), 0, 0);
+        infoParams.setMarginStart(0);
+        infoParams.setMarginEnd(Nator.px(context, 16));
         addView(info, infoParams);
 
         // player-controls__bottom-scrim + dock.
@@ -92,7 +95,7 @@ public final class InlinePlayer extends FrameLayout {
         View dot = new View(context);
         dot.setBackground(Nator.oval(0xFFFFFFFF));
         live.addView(dot, Nator.margins(context, Nator.size(context, 6, 6), 0, 0, 5, 0));
-        live.addView(Nator.text(context, "LIVE", 10.56f, Nator.W700, 0xFFFFFFFF));
+        live.addView(Nator.text(context, Tr.t("LIVE", "مباشر"), 10.56f, Nator.W700, 0xFFFFFFFF));
         top.addView(live);
         controls.addView(top, Nator.margins(context, Nator.matchWidth(), 0, 0, 0, 8));
 
@@ -144,7 +147,7 @@ public final class InlinePlayer extends FrameLayout {
                 @Override
                 public void onPlayerError(PlaybackException error) {
                     spinner.setVisibility(GONE);
-                    message.setText("This channel could not be played");
+                    message.setText(Tr.t("This channel could not be played", "تعذّر تشغيل هذه القناة"));
                     message.setVisibility(VISIBLE);
                 }
             });

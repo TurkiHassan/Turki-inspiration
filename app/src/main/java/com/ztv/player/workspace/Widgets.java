@@ -13,6 +13,8 @@ import androidx.leanback.widget.HorizontalGridView;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.ztv.player.ui.Tr;
+
 /** Shared IPTVnator building blocks used by several pages. */
 public final class Widgets {
     private Widgets() {
@@ -53,6 +55,16 @@ public final class Widgets {
         return rail;
     }
 
+    /** The D-pad key that moves toward the content: → in English, ← in Arabic (right to left). */
+    public static int forwardKey() {
+        return Tr.arabic() ? android.view.KeyEvent.KEYCODE_DPAD_LEFT : android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
+    }
+
+    /** The D-pad key that moves back toward the side panels: ← in English, → in Arabic. */
+    public static int backKey() {
+        return Tr.arabic() ? android.view.KeyEvent.KEYCODE_DPAD_RIGHT : android.view.KeyEvent.KEYCODE_DPAD_LEFT;
+    }
+
     /**
      * leanback consumes the D-pad at a grid's leading edge; hand that key to the normal
      * focus search instead so focus can leave (LEFT out of a rail, UP out of a grid).
@@ -63,8 +75,8 @@ public final class Widgets {
         }
         int key = event.getKeyCode();
         int direction;
-        if (horizontal && key == android.view.KeyEvent.KEYCODE_DPAD_LEFT) {
-            direction = View.FOCUS_LEFT;
+        if (horizontal && key == backKey()) {
+            direction = Tr.arabic() ? View.FOCUS_RIGHT : View.FOCUS_LEFT;
         } else if (!horizontal && key == android.view.KeyEvent.KEYCODE_DPAD_UP) {
             direction = View.FOCUS_UP;
         } else {
@@ -119,7 +131,7 @@ public final class Widgets {
                 return false;
             }
             int position = grid.getSelectedPosition();
-            if (event.getKeyCode() == android.view.KeyEvent.KEYCODE_DPAD_LEFT && onLeftEdge != null
+            if (event.getKeyCode() == backKey() && onLeftEdge != null
                     && position >= 0 && position % columns == 0) {
                 onLeftEdge.run();
                 return true;

@@ -30,6 +30,7 @@ public final class SettingsStore {
     private static final String KEY_AUDIO_DELAY_MS = "audio_delay_ms";
     private static final String KEY_VOICE_LANGUAGE = "voice_language";
     private static final String KEY_APP_LANGUAGE = "app_language";
+    private static final String KEY_SCREEN_EDGES = "screen_edges";
     private static final String KEY_HIDDEN_SECTIONS_PREFIX = "hidden_sections_";
     private static final String KEY_DETAIL_ORDER = "detail_button_order";
     private static final String KEY_DETAIL_HIDDEN = "detail_hidden_buttons";
@@ -171,6 +172,31 @@ public final class SettingsStore {
     private static String knownVoiceLanguage(String value) {
         return VOICE_DEVICE.equals(value) || VOICE_ARABIC.equals(value) || VOICE_ENGLISH.equals(value)
                 ? value : VOICE_BILINGUAL;
+    }
+
+    public static final String EDGES_NONE = "None";
+    public static final String EDGES_SMALL = "Small";
+    public static final String EDGES_MEDIUM = "Medium";
+    public static final String EDGES_LARGE = "Large";
+
+    /** How far the interface stays from the screen edges, for TVs that crop the picture. */
+    public String screenEdges() {
+        String value = preferences.getString(KEY_SCREEN_EDGES, EDGES_SMALL);
+        return EDGES_NONE.equals(value) || EDGES_MEDIUM.equals(value) || EDGES_LARGE.equals(value) ? value : EDGES_SMALL;
+    }
+
+    public void setScreenEdges(String edges) {
+        preferences.edit().putString(KEY_SCREEN_EDGES, edges).apply();
+    }
+
+    /** Inset per side as a fraction of the screen size. */
+    public float screenEdgeFraction() {
+        switch (screenEdges()) {
+            case EDGES_NONE: return 0f;
+            case EDGES_MEDIUM: return 0.04f;
+            case EDGES_LARGE: return 0.055f;
+            default: return 0.025f;
+        }
     }
 
     /** "ar" or "en" (the default). */

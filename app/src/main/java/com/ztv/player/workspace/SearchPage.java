@@ -13,6 +13,7 @@ import androidx.leanback.widget.VerticalGridView;
 import com.ztv.player.data.XtreamContentType;
 import com.ztv.player.data.XtreamMediaItem;
 import com.ztv.player.data.XtreamMediaSection;
+import com.ztv.player.ui.Tr;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -121,12 +122,12 @@ public final class SearchPage extends Page implements Catalog.LibraryListener {
 
     @Override
     public String searchScope() {
-        return "Advanced search";
+        return Tr.t("Advanced search", "بحث متقدم");
     }
 
     @Override
     public String searchPlaceholder() {
-        return "Search in this playlist...";
+        return Tr.t("Search in this playlist...", "ابحث في هذا الاشتراك...");
     }
 
     @Override
@@ -183,15 +184,15 @@ public final class SearchPage extends Page implements Catalog.LibraryListener {
         LinearLayout column = Nator.column(context);
         LinearLayout header = Nator.row(context);
         Nator.pad(header, 20, 0, 20, 0);
-        header.addView(Nator.text(context, "Search", 19.2f, Nator.W600, Nator.ON_SURFACE), Nator.margins(context, Nator.wrap(), 0, 0, 40, 0));
-        header.addView(checkbox("Live TV", XtreamContentType.LIVE), Nator.margins(context, Nator.wrap(), 0, 0, 24, 0));
-        header.addView(checkbox("Movies", XtreamContentType.MOVIE), Nator.margins(context, Nator.wrap(), 0, 0, 24, 0));
-        header.addView(checkbox("Series", XtreamContentType.SERIES), Nator.margins(context, Nator.wrap(), 0, 0, 24, 0));
+        header.addView(Nator.text(context, Tr.t("Search", "البحث"), 19.2f, Nator.W600, Nator.ON_SURFACE), Nator.margins(context, Nator.wrap(), 0, 0, 40, 0));
+        header.addView(checkbox(Tr.t("Live TV", "القنوات"), XtreamContentType.LIVE), Nator.margins(context, Nator.wrap(), 0, 0, 24, 0));
+        header.addView(checkbox(Tr.t("Movies", "الأفلام"), XtreamContentType.MOVIE), Nator.margins(context, Nator.wrap(), 0, 0, 24, 0));
+        header.addView(checkbox(Tr.t("Series", "المسلسلات"), XtreamContentType.SERIES), Nator.margins(context, Nator.wrap(), 0, 0, 24, 0));
         resultCount = Nator.countChip(context, "", Nator.BODY);
         resultCount.setVisibility(View.GONE);
         header.addView(resultCount);
         header.addView(Nator.spacer(context));
-        header.addView(checkbox("Visible categories only", null));
+        header.addView(checkbox(Tr.t("Visible categories only", "الفئات الظاهرة فقط"), null));
         column.addView(header, new LinearLayout.LayoutParams(-1, Nator.px(context, 72)));
         heardRow = Nator.row(context);
         Nator.pad(heardRow, 20, 0, 20, 12);
@@ -218,7 +219,7 @@ public final class SearchPage extends Page implements Catalog.LibraryListener {
         Nator.pad(grid, 20, 4, 20, 24);
         Widgets.enablePartialRowDown(grid, columns);
         body.addView(grid, new FrameLayout.LayoutParams(-1, -1));
-        LinearLayout emptyBox = Widgets.emptyState(context, "search", "Search for content",
+        LinearLayout emptyBox = Widgets.emptyState(context, "search", Tr.t("Search for content", "ابحث عن محتوى"),
                 emptyHint());
         emptyTitle = (TextView) emptyBox.getChildAt(1);
         emptyBody = (TextView) emptyBox.getChildAt(2);
@@ -259,8 +260,8 @@ public final class SearchPage extends Page implements Catalog.LibraryListener {
 
     private String emptyHint() {
         return host.voiceSearchAvailable()
-                ? "Type at least 3 characters, or press the mic and say a channel, movie or series."
-                : "Enter at least 3 characters to search across live TV, movies and series.";
+                ? Tr.t("Type at least 3 characters, or press the mic and say a channel, movie or series.", "اكتب 3 أحرف على الأقل، أو اضغط الميكروفون وقل اسم قناة أو فيلم أو مسلسل.")
+                : Tr.t("Enter at least 3 characters to search across live TV, movies and series.", "أدخل 3 أحرف على الأقل للبحث في القنوات والأفلام والمسلسلات.");
     }
 
     private void renderHeard() {
@@ -276,7 +277,7 @@ public final class SearchPage extends Page implements Catalog.LibraryListener {
             heardRow.setVisibility(View.GONE);
             return;
         }
-        heardRow.addView(Nator.text(context, "Also heard", 13, Nator.W500, Nator.BODY), Nator.margins(context, Nator.wrap(), 0, 0, 14, 0));
+        heardRow.addView(Nator.text(context, Tr.t("Also heard", "سمعنا أيضًا"), 13, Nator.W500, Nator.BODY), Nator.margins(context, Nator.wrap(), 0, 0, 14, 0));
         for (String alternative : others) {
             TextView chip = Nator.text(context, alternative, 13.5f, Nator.W500, Nator.ON_SURFACE);
             chip.setGravity(Gravity.CENTER);
@@ -299,18 +300,19 @@ public final class SearchPage extends Page implements Catalog.LibraryListener {
         if (matcher.length() < (spoken ? MIN_SPOKEN : MIN_TYPED)) {
             adapter.setItems(new ArrayList<>());
             resultCount.setVisibility(View.GONE);
-            emptyTitle.setText("Search for content");
+            emptyTitle.setText(Tr.t("Search for content", "ابحث عن محتوى"));
             emptyBody.setText(emptyHint());
             empty.setVisibility(View.VISIBLE);
             return;
         }
         List<XtreamMediaItem> results = search(matcher, MAX_RESULTS);
         adapter.setItems(results);
-        resultCount.setText(Nator.plural(results.size(), "result", "results"));
+        resultCount.setText(Nator.plural(results.size(), "result", "results", "نتيجة واحدة", "نتيجتان", "نتائج", "نتيجة"));
         resultCount.setVisibility(View.VISIBLE);
         if (results.isEmpty()) {
-            emptyTitle.setText("No results");
-            emptyBody.setText("Nothing matches \"" + query + "\". Try another title or enable more types.");
+            emptyTitle.setText(Tr.t("No results", "لا نتائج"));
+            emptyBody.setText(Tr.t("Nothing matches \"" + query + "\". Try another title or enable more types.",
+                    "لا شيء يطابق «" + query + "». جرّب عنوانًا آخر أو فعّل أنواعًا أكثر."));
             empty.setVisibility(View.VISIBLE);
         } else {
             empty.setVisibility(View.GONE);

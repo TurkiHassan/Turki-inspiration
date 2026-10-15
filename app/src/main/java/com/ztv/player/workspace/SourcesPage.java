@@ -11,6 +11,7 @@ import android.widget.TextView;
 import androidx.leanback.widget.VerticalGridView;
 
 import com.ztv.player.data.ServerAddressPolicy;
+import com.ztv.player.ui.Tr;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -43,12 +44,12 @@ public final class SourcesPage extends Page {
 
     @Override
     public String searchScope() {
-        return "Sources";
+        return Tr.t("Sources", "المصادر");
     }
 
     @Override
     public String searchPlaceholder() {
-        return "Search sources (all playlists)...";
+        return Tr.t("Search sources (all playlists)...", "ابحث في المصادر (كل الاشتراكات)...");
     }
 
     @Override
@@ -61,12 +62,12 @@ public final class SourcesPage extends Page {
         LinearLayout panel = Nator.column(context);
         LinearLayout heading = Nator.column(context);
         Nator.pad(heading, 6, 4, 0, 0);
-        heading.addView(Nator.text(context, "Sources", 15.04f, Nator.W600, Nator.ON_SURFACE));
-        heading.addView(Nator.text(context, "Filter and sort playlists", 12.48f, Nator.W400, Nator.ON_SURFACE_VARIANT),
+        heading.addView(Nator.text(context, Tr.t("Sources", "المصادر"), 15.04f, Nator.W600, Nator.ON_SURFACE));
+        heading.addView(Nator.text(context, Tr.t("Filter and sort playlists", "تصفية الاشتراكات وترتيبها"), 12.48f, Nator.W400, Nator.ON_SURFACE_VARIANT),
                 Nator.margins(context, Nator.wrap(), 0, 4, 0, 0));
         panel.addView(heading);
         panel.addView(Nator.hairline(context, Nator.OUTLINE_VARIANT), Nator.margins(context, new LinearLayout.LayoutParams(-1, Math.max(1, Nator.px(context, 1))), 0, 10, 0, 6));
-        TextView sectionTitle = Nator.text(context, "TYPE", 11.52f, Nator.W600, Nator.ON_SURFACE_VARIANT);
+        TextView sectionTitle = Nator.text(context, Tr.t("TYPE", "النوع"), 11.52f, Nator.W600, Nator.ON_SURFACE_VARIANT);
         sectionTitle.setLetterSpacing(0.06f);
         Nator.pad(sectionTitle, 18, 10, 10, 6);
         panel.addView(sectionTitle);
@@ -78,8 +79,8 @@ public final class SourcesPage extends Page {
         });
         int count = host.hasSource() ? 1 : 0;
         List<CategoryAdapter.Row> rows = new ArrayList<>();
-        rows.add(new CategoryAdapter.Row("all", "All", count, "layers"));
-        rows.add(new CategoryAdapter.Row("m3u", "M3U (local, url, text)", 0, "playlist_play"));
+        rows.add(new CategoryAdapter.Row("all", Tr.t("All", "الكل"), count, "layers"));
+        rows.add(new CategoryAdapter.Row("m3u", Tr.t("M3U (local, url, text)", "M3U (ملف، رابط، نص)"), 0, "playlist_play"));
         rows.add(new CategoryAdapter.Row("xtream", "Xtream", count, "cloud"));
         rows.add(new CategoryAdapter.Row("stalker", "Stalker", 0, "cast"));
         adapter.setRows(rows);
@@ -96,7 +97,7 @@ public final class SourcesPage extends Page {
         LinearLayout column = Nator.column(context);
         Nator.pad(column, 16, 6, 26, 16);
         LinearLayout header = Nator.row(context);
-        header.addView(Nator.text(context, "All Playlists", 15.2f, Nator.W600, Nator.HEADING));
+        header.addView(Nator.text(context, Tr.t("All Playlists", "كل الاشتراكات"), 15.2f, Nator.W600, Nator.HEADING));
         countChip = Nator.countChip(context, "", Nator.BODY);
         header.addView(countChip, Nator.margins(context, Nator.wrap(), 10, 0, 0, 0));
         header.addView(Nator.spacer(context));
@@ -107,8 +108,8 @@ public final class SourcesPage extends Page {
         Nator.focusable(sort, 9999);
         sort.addView(Nator.icon(context, "sort", 18, 0xFFABC7FF), Nator.margins(context, Nator.size(context, 18, 18), 0, 0, 10, 0));
         sort.addView(Nator.icon(context, "arrow_drop_down", 18, 0xFFABC7FF), Nator.margins(context, Nator.size(context, 18, 18), 0, 0, 12, 0));
-        sort.addView(Nator.text(context, "Date added (Newest first)", 13.6f, Nator.W500, 0xFFABC7FF));
-        sort.setOnClickListener(v -> host.snack("Only one source is configured"));
+        sort.addView(Nator.text(context, Tr.t("Date added (Newest first)", "تاريخ الإضافة (الأحدث أولًا)"), 13.6f, Nator.W500, 0xFFABC7FF));
+        sort.setOnClickListener(v -> host.snack(Tr.t("Only one source is configured", "هناك مصدر واحد فقط")));
         header.addView(sort, Nator.size(context, -2, 40));
         column.addView(header, new LinearLayout.LayoutParams(-1, Nator.px(context, 52)));
         list = Nator.column(context);
@@ -135,11 +136,11 @@ public final class SourcesPage extends Page {
         boolean visible = host.hasSource()
                 && ("all".equals(typeFilter) || "xtream".equals(typeFilter))
                 && (query.isEmpty() || host.playlistTitle().toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)));
-        countChip.setText(Nator.plural(visible ? 1 : 0, "playlist", "playlists"));
+        countChip.setText(Nator.plural(visible ? 1 : 0, "playlist", "playlists", "اشتراك واحد", "اشتراكان", "اشتراكات", "اشتراك"));
         if (!visible) {
-            LinearLayout empty = Widgets.emptyState(context, "playlist_add", "No playlists here",
-                    host.hasSource() ? "No playlist matches this filter." : "Add an Xtream account to get started.");
-            TextView add = host.dialogFilledButton("Add playlist", () -> host.showAddPlaylist(null));
+            LinearLayout empty = Widgets.emptyState(context, "playlist_add", Tr.t("No playlists here", "لا اشتراكات هنا"),
+                    host.hasSource() ? Tr.t("No playlist matches this filter.", "لا اشتراك يطابق هذه التصفية.") : Tr.t("Add an Xtream account to get started.", "أضف حساب Xtream للبدء."));
+            TextView add = host.dialogFilledButton(Tr.t("Add playlist", "إضافة اشتراك"), () -> host.showAddPlaylist(null));
             empty.addView(add, Nator.margins(context, Nator.wrap(), 0, 20, 0, 0));
             list.addView(empty, Nator.margins(context, Nator.matchWidth(), 0, 80, 0, 0));
             firstFocus = add;
@@ -170,10 +171,10 @@ public final class SourcesPage extends Page {
                 13.12f, Nator.W400, Nator.SELECTION), Nator.margins(context, Nator.wrap(), 0, 2, 0, 0));
         row.addView(texts, new LinearLayout.LayoutParams(0, -2, 1f));
 
-        View open = host.iconButton("play_arrow", 20, "Open playlist", v -> host.openSection(Section.VOD));
-        View info = host.iconButton("info_outline", 20, "Account info", v -> host.showAccountInfo());
-        View edit = host.iconButton("edit", 20, "Edit playlist", v -> host.showAddPlaylist(host.credentials()));
-        View delete = host.iconButton("delete", 20, "Delete playlist", v -> confirmDelete());
+        View open = host.iconButton("play_arrow", 20, Tr.t("Open playlist", "فتح الاشتراك"), v -> host.openSection(Section.VOD));
+        View info = host.iconButton("info_outline", 20, Tr.t("Account info", "معلومات الحساب"), v -> host.showAccountInfo());
+        View edit = host.iconButton("edit", 20, Tr.t("Edit playlist", "تعديل الاشتراك"), v -> host.showAddPlaylist(host.credentials()));
+        View delete = host.iconButton("delete", 20, Tr.t("Delete playlist", "حذف الاشتراك"), v -> confirmDelete());
         for (View action : new View[]{open, info, edit, delete}) {
             ((TextView) ((FrameLayout) action).getChildAt(0)).setTextColor(Nator.SELECTION);
             row.addView(action, Nator.margins(context, Nator.size(context, 36, 36), 0, 0, 2, 0));
@@ -197,16 +198,18 @@ public final class SourcesPage extends Page {
         LinearLayout card = Nator.column(context);
         card.setBackground(Nator.rounded(context, 0xFF121316, 28));
         Nator.pad(card, 24, 24, 24, 18);
-        card.addView(Nator.text(context, "Delete playlist?", 20, Nator.W600, Nator.HEADING));
-        TextView body = Nator.text(context, "\"" + host.playlistTitle() + "\" will be removed from ZTV and you will be signed out. "
-                + "Favorites and watch history stay on this device.", 13.5f, Nator.W400, Nator.BODY);
+        card.addView(Nator.text(context, Tr.t("Delete playlist?", "حذف الاشتراك؟"), 20, Nator.W600, Nator.HEADING));
+        TextView body = Nator.text(context, Tr.t("\"" + host.playlistTitle() + "\" will be removed from ZTV and you will be signed out. "
+                + "Favorites and watch history stay on this device.",
+                "سيُحذف «" + host.playlistTitle() + "» من ZTV وسيُسجَّل خروجك. تبقى المفضلة وسجل المشاهدة على هذا الجهاز."),
+                13.5f, Nator.W400, Nator.BODY);
         Nator.lineHeight(body, 20);
         card.addView(body, Nator.margins(context, Nator.matchWidth(), 0, 12, 0, 0));
         LinearLayout actions = Nator.row(context);
         actions.setGravity(Gravity.END);
-        TextView cancel = host.dialogTextButton("Cancel", host::dismissTopOverlay);
+        TextView cancel = host.dialogTextButton(Tr.t("Cancel", "إلغاء"), host::dismissTopOverlay);
         actions.addView(cancel, Nator.margins(context, Nator.wrap(), 0, 0, 8, 0));
-        actions.addView(host.dialogFilledButton("Delete", () -> {
+        actions.addView(host.dialogFilledButton(Tr.t("Delete", "حذف"), () -> {
             host.dismissTopOverlay();
             host.removeSource();
         }));

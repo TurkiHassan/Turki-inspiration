@@ -86,12 +86,12 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
 
     @Override
     public String searchScope() {
-        return withSource ? "Advanced search" : null;
+        return withSource ? Tr.t("Advanced search", "بحث متقدم") : null;
     }
 
     @Override
     public String searchPlaceholder() {
-        return "Search in this playlist...";
+        return Tr.t("Search in this playlist...", "ابحث في هذا الاشتراك...");
     }
 
     @Override
@@ -216,12 +216,12 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
         logoBox.addView(logo, new FrameLayout.LayoutParams(-1, -1));
         box.addView(logoBox, Nator.size(context, 96, 96));
 
-        TextView title = Nator.text(context, "Welcome to ZTV", 24.48f, Nator.W600, 0xFF60A5FA);
+        TextView title = Nator.text(context, Tr.t("Welcome to ZTV", "مرحبًا بك في ZTV"), 24.48f, Nator.W600, 0xFF60A5FA);
         title.getPaint().setShader(null);
         box.addView(title, Nator.margins(context, Nator.wrap(), 0, 26, 0, 0));
         title.post(() -> title.getPaint().setShader(new android.graphics.LinearGradient(0, 0, title.getWidth(), title.getHeight(),
                 new int[]{0xFF60A5FA, 0xFF3B82F6, 0xFF6366F1}, null, Shader.TileMode.CLAMP)));
-        box.addView(Nator.text(context, "Your IPTV library, in one place.", 15.2f, Nator.W500, Nator.ON_SURFACE),
+        box.addView(Nator.text(context, Tr.t("Your IPTV library, in one place.", "مكتبتك التلفزيونية في مكان واحد."), 15.2f, Nator.W500, Nator.ON_SURFACE),
                 Nator.margins(context, Nator.wrap(), 0, 10, 0, 0));
         TextView description = Nator.text(context,
                 "Connect your Xtream Codes account — then enjoy live TV, movies and series on every screen.",
@@ -241,18 +241,18 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
         Nator.pad(cta, 28, 10, 28, 10);
         Nator.focusable(cta, 12);
         cta.addView(Nator.icon(context, "add_circle", 18, 0xFFFFFFFF), Nator.margins(context, Nator.size(context, 18, 18), 0, 0, 8, 0));
-        cta.addView(Nator.text(context, "Add Your First Playlist", 14, Nator.W500, 0xFFFFFFFF));
+        cta.addView(Nator.text(context, Tr.t("Add Your First Playlist", "أضف اشتراكك الأول"), 14, Nator.W500, 0xFFFFFFFF));
         cta.setOnClickListener(v -> host.showAddPlaylist(null));
         box.addView(cta, Nator.margins(context, Nator.size(context, -2, 40), 0, 18, 0, 0));
         firstFocus = cta;
 
         LinearLayout features = Nator.row(context);
         features.setGravity(Gravity.TOP);
-        features.addView(featureCard("live_tv", "Live TV", "Stream live channels with full schedule.", -1.2f),
+        features.addView(featureCard("live_tv", Tr.t("Live TV", "القنوات"), Tr.t("Stream live channels with full schedule.", "شاهد القنوات المباشرة مع دليل البرامج."), -1.2f),
                 Nator.margins(context, Nator.size(context, 261, 139), 0, 0, 18, 0));
-        features.addView(featureCard("movie", "Movies & Series", "On-demand library with covers and details.", 0.8f),
+        features.addView(featureCard("movie", Tr.t("Movies & Series", "الأفلام والمسلسلات"), Tr.t("On-demand library with covers and details.", "مكتبة عند الطلب بالأغلفة والتفاصيل."), 0.8f),
                 Nator.margins(context, Nator.size(context, 261, 139), 0, 0, 18, 0));
-        features.addView(featureCard("event_note", "EPG & Catch-up", "Program guide and time-shifted playback.", -0.6f),
+        features.addView(featureCard("event_note", Tr.t("EPG & Catch-up", "دليل البرامج والإعادة"), Tr.t("Program guide and time-shifted playback.", "دليل البرامج ومشاهدة ما فاتك."), -0.6f),
                 Nator.size(context, 261, 139));
         box.addView(features, Nator.margins(context, Nator.wrap(), 0, 30, 0, 0));
         frame.addView(box, new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER));
@@ -310,7 +310,9 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
         heroKeyArt.setScaleType(ImageView.ScaleType.CENTER_CROP);
         keyArtBox.addView(heroKeyArt, new FrameLayout.LayoutParams(-1, -1));
         FrameLayout.LayoutParams keyArtParams = new FrameLayout.LayoutParams(Nator.px(context, 164), Nator.px(context, 246), Gravity.END | Gravity.TOP);
-        keyArtParams.setMargins(0, Nator.px(context, 24), Nator.px(context, 96), 0);
+        keyArtParams.setMargins(0, Nator.px(context, 24), 0, 0);
+        keyArtParams.setMarginStart(0);
+        keyArtParams.setMarginEnd(Nator.px(context, 96));
         frame.addView(keyArtBox, keyArtParams);
 
         LinearLayout content = Nator.column(context);
@@ -326,14 +328,16 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
         heroPill = Nator.metaChip(context, "", 0xFFBBBFCA, Nator.W500);
         content.addView(heroPill, Nator.margins(context, Nator.wrap(), 0, 10, 0, 0));
         LinearLayout buttons = Nator.row(context);
-        heroButton = Widgets.lightPrimary(context, "info", "Details", null, this::openSlide);
+        heroButton = Widgets.lightPrimary(context, "info", Tr.t("Details", "التفاصيل"), null, this::openSlide);
         buttons.addView(heroButton, Nator.size(context, -2, 38));
         content.addView(buttons, Nator.margins(context, Nator.wrap(), 0, 16, 0, 0));
         frame.addView(content, new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM));
 
         heroDots = Nator.row(context);
         FrameLayout.LayoutParams dotsParams = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.END);
-        dotsParams.setMargins(0, 0, Nator.px(context, 96 + 82 - 30), Nator.px(context, 18));
+        dotsParams.setMargins(0, 0, 0, Nator.px(context, 18));
+        dotsParams.setMarginStart(0);
+        dotsParams.setMarginEnd(Nator.px(context, 96 + 82 - 30));
         frame.addView(heroDots, dotsParams);
         return frame;
     }
@@ -344,21 +348,22 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
                 host.progress.snapshotsFor(XtreamContentType.MOVIE).values(),
                 host.progress.snapshotsFor(XtreamContentType.EPISODE).values(), 3);
         for (WatchProgressStore.EntrySnapshot snapshot : resume) {
-            String type = snapshot.item().type() == XtreamContentType.EPISODE ? "Episode" : "Movie";
-            slides.add(new HeroSlide(snapshot.item(), type + "  ·  Continue watching", "Resume"));
+            String type = snapshot.item().type() == XtreamContentType.EPISODE ? Tr.t("Episode", "حلقة") : Tr.t("Movie", "فيلم");
+            slides.add(new HeroSlide(snapshot.item(), type + "  ·  " + Tr.t("Continue watching", "تابع المشاهدة"), Tr.t("Resume", "استئناف")));
         }
         for (XtreamContentType type : new XtreamContentType[]{XtreamContentType.MOVIE, XtreamContentType.SERIES}) {
             for (XtreamMediaItem item : host.favorites.list(type)) {
                 if (slides.size() >= 6) {
                     break;
                 }
-                slides.add(new HeroSlide(item, (type == XtreamContentType.SERIES ? "Series" : "Movie") + "  ·  Favorite", "Details"));
+                slides.add(new HeroSlide(item, (type == XtreamContentType.SERIES ? Tr.t("Series", "مسلسل") : Tr.t("Movie", "فيلم"))
+                        + "  ·  " + Tr.t("Favorite", "مفضّل"), Tr.t("Details", "التفاصيل")));
             }
         }
         if (slides.size() < 3) {
             List<XtreamMediaItem> latest = Catalog.latest(Catalog.allItems(host.catalog.cached(XtreamContentType.MOVIE)), 3);
             for (XtreamMediaItem item : latest) {
-                slides.add(new HeroSlide(item, "Movie  ·  Recently added", "Details"));
+                slides.add(new HeroSlide(item, Tr.t("Movie  ·  Recently added", "فيلم  ·  أُضيف حديثًا"), Tr.t("Details", "التفاصيل")));
             }
         }
     }
@@ -440,21 +445,21 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
                 cards.add(new RailCardAdapter.Card(snapshot.item(),
                         ContinueWatchingPolicy.timeLeft(snapshot.positionMs(), snapshot.durationMs()), snapshot.progressPercent()));
             }
-            addRail("Continue Watching", cards, false, null);
+            addRail(Tr.t("Continue Watching", "تابع المشاهدة"), cards, false, null);
         }
 
         List<XtreamMediaItem> favoriteChannels = host.favorites.list(XtreamContentType.LIVE);
         if (host.prefs.bool(SettingsPage.PREF_RAIL_LIVE_FAVORITES, true) && !favoriteChannels.isEmpty()) {
-            addRail("Live now on your favorites", cards(favoriteChannels), true, () -> host.openSection(Section.FAVORITES));
+            addRail(Tr.t("Live now on your favorites", "الآن على قنواتك المفضلة"), cards(favoriteChannels), true, () -> host.openSection(Section.FAVORITES));
         }
         List<XtreamMediaItem> recentChannels = host.history.list(XtreamContentType.LIVE);
         if (host.prefs.bool(SettingsPage.PREF_RAIL_RECENT_LIVE, true) && !recentChannels.isEmpty()) {
-            addRail("Recently watched live TV", cards(recentChannels), true, () -> host.openSection(Section.RECENT));
+            addRail(Tr.t("Recently watched live TV", "قنوات شوهدت مؤخرًا"), cards(recentChannels), true, () -> host.openSection(Section.RECENT));
         }
         List<XtreamMediaItem> favoriteVod = new ArrayList<>(host.favorites.list(XtreamContentType.MOVIE));
         favoriteVod.addAll(host.favorites.list(XtreamContentType.SERIES));
         if (host.prefs.bool(SettingsPage.PREF_RAIL_FAVORITE_VOD, true) && !favoriteVod.isEmpty()) {
-            addRail("Favorite movies & series", cards(favoriteVod), false, () -> host.openSection(Section.FAVORITES));
+            addRail(Tr.t("Favorite movies & series", "الأفلام والمسلسلات المفضلة"), cards(favoriteVod), false, () -> host.openSection(Section.FAVORITES));
         }
         if (host.kidsMode()) {
             addKidsRails();
@@ -500,7 +505,7 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
         latest.addAll(Catalog.latest(Catalog.allItems(host.catalog.cached(XtreamContentType.SERIES)), 8));
         latest = Catalog.latest(latest, 20);
         if (host.prefs.bool(SettingsPage.PREF_RAIL_RECENTLY_ADDED, true) && !latest.isEmpty()) {
-            View rail = addRail("Recently Added on Xtream", cards(latest), false, () -> host.openSection(Section.RECENTLY_ADDED));
+            View rail = addRail(Tr.t("Recently Added on Xtream", "أُضيف حديثًا"), cards(latest), false, () -> host.openSection(Section.RECENTLY_ADDED));
             rail.setTag(RECENTLY_ADDED_TAG);
         }
     }
@@ -514,7 +519,7 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
     }
 
     private View addRail(String title, List<RailCardAdapter.Card> cards, boolean channels, Runnable seeAll) {
-        railsColumn.addView(Widgets.railHeader(context, title, cards.size(), seeAll == null ? null : "See all", seeAll),
+        railsColumn.addView(Widgets.railHeader(context, title, cards.size(), seeAll == null ? null : Tr.t("See all", "عرض الكل"), seeAll),
                 Nator.margins(context, Nator.matchWidth(), 2, railsColumn.getChildCount() == 0 ? 14 : 30, 0, 12));
         HorizontalGridView rail = Widgets.horizontalRail(context, 16);
         RailCardAdapter adapter = new RailCardAdapter(context, channels, channels ? 220 : 172, new RailCardAdapter.Listener() {
@@ -538,7 +543,7 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
     }
 
     private void addSourcesRail() {
-        railsColumn.addView(Widgets.railHeader(context, "Recently Used Sources", 1, "See all", () -> host.openSection(Section.SOURCES)),
+        railsColumn.addView(Widgets.railHeader(context, Tr.t("Recently Used Sources", "المصادر المستخدمة مؤخرًا"), 1, Tr.t("See all", "عرض الكل"), () -> host.openSection(Section.SOURCES)),
                 Nator.margins(context, Nator.matchWidth(), 2, railsColumn.getChildCount() == 0 ? 14 : 30, 0, 12));
         LinearLayout tile = Nator.column(context);
         FrameLayout art = new FrameLayout(context);

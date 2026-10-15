@@ -18,6 +18,7 @@ import android.widget.TextView;
 import com.ztv.player.data.ServerAddressPolicy;
 import com.ztv.player.data.XtreamApiClient;
 import com.ztv.player.data.XtreamCredentials;
+import com.ztv.player.ui.Tr;
 
 /**
  * IPTVnator's "Add playlist" dialog: the six connection methods (Xtream credentials is the
@@ -50,17 +51,17 @@ final class AddPlaylistDialog {
         Nator.pad(card, 24, 20, 24, 20);
         scroll.addView(card, new ScrollView.LayoutParams(-1, -2));
 
-        card.addView(Nator.text(context, prefill != null ? "Edit playlist" : "Add playlist", 20, Nator.W600, Nator.HEADING));
-        card.addView(Nator.text(context, "Pick how you want to connect. You can rename it later.", 13, Nator.W400, Nator.BODY),
+        card.addView(Nator.text(context, prefill != null ? Tr.t("Edit playlist", "تعديل الاشتراك") : Tr.t("Add playlist", "إضافة اشتراك"), 20, Nator.W600, Nator.HEADING));
+        card.addView(Nator.text(context, Tr.t("Pick how you want to connect. You can rename it later.", "اختر طريقة الاتصال. يمكنك تغيير الاسم لاحقًا."), 13, Nator.W400, Nator.BODY),
                 Nator.margins(context, Nator.wrap(), 0, 4, 0, 14));
 
         String[][] methods = {
-                {"link", "M3U URL", "Paste a link to a remote .m3u or .m3u8"},
-                {"description", "M3U file", "Upload a playlist from your computer"},
-                {"cloud", "Xtream credentials", "Connect with host, username and password"},
-                {"cast", "Stalker portal", "MAC address and portal URL"},
-                {"subject", "Raw m3u text", "For one-off lists or when you only have text"},
-                {"auto_awesome", "Auto-detect", "Paste the message from your provider"},
+                {"link", Tr.t("M3U URL", "رابط M3U"), Tr.t("Paste a link to a remote .m3u or .m3u8", "الصق رابط ملف ‎.m3u أو ‎.m3u8")},
+                {"description", Tr.t("M3U file", "ملف M3U"), Tr.t("Upload a playlist from your computer", "ارفع قائمة من جهازك")},
+                {"cloud", Tr.t("Xtream credentials", "بيانات Xtream"), Tr.t("Connect with host, username and password", "اتصل بالخادم واسم المستخدم وكلمة المرور")},
+                {"cast", Tr.t("Stalker portal", "بوابة Stalker"), Tr.t("MAC address and portal URL", "عنوان MAC ورابط البوابة")},
+                {"subject", Tr.t("Raw m3u text", "نص m3u"), Tr.t("For one-off lists or when you only have text", "لقوائم مؤقتة أو حين لا تملك إلا النص")},
+                {"auto_awesome", Tr.t("Auto-detect", "اكتشاف تلقائي"), Tr.t("Paste the message from your provider", "الصق الرسالة التي أرسلها مزوّدك")},
         };
         LinearLayout gridRow = null;
         View xtreamCard = null;
@@ -97,27 +98,27 @@ final class AddPlaylistDialog {
 
         card.addView(fieldBox(title), Nator.margins(context, new LinearLayout.LayoutParams(-1, Nator.px(context, 52)), 0, 18, 0, 0));
         card.addView(fieldBox(server), Nator.margins(context, new LinearLayout.LayoutParams(-1, Nator.px(context, 52)), 0, 12, 0, 0));
-        TextView hint = Nator.text(context, "Server address, e.g. http://host:port", 11, Nator.W400, Nator.MUTED);
+        TextView hint = Nator.text(context, Tr.t("Server address, e.g. http://host:port", "عنوان الخادم، مثل http://host:port"), 11, Nator.W400, Nator.MUTED);
         card.addView(hint, Nator.margins(context, Nator.wrap(), 16, 4, 0, 0));
         card.addView(fieldBox(username), Nator.margins(context, new LinearLayout.LayoutParams(-1, Nator.px(context, 52)), 0, 10, 0, 0));
         card.addView(fieldBox(password), Nator.margins(context, new LinearLayout.LayoutParams(-1, Nator.px(context, 52)), 0, 12, 0, 0));
 
-        status = Nator.text(context, "This test may send your username and password over unencrypted HTTP if HTTPS is unavailable.",
+        status = Nator.text(context, Tr.t("This test may send your username and password over unencrypted HTTP if HTTPS is unavailable.", "قد يرسل هذا الاختبار اسم المستخدم وكلمة المرور عبر HTTP غير المشفّر إن لم يتوفر HTTPS."),
                 13.5f, Nator.W400, Nator.ON_SURFACE);
         card.addView(status, Nator.margins(context, Nator.matchWidth(), 0, 16, 0, 0));
 
         LinearLayout actions = Nator.row(context);
-        actions.addView(host.dialogTextButton("Clear", () -> {
+        actions.addView(host.dialogTextButton(Tr.t("Clear", "مسح"), () -> {
             title.setText("");
             server.setText("");
             username.setText("");
             password.setText("");
         }));
         actions.addView(Nator.spacer(context));
-        actions.addView(host.dialogTextButton("Cancel", host::dismissTopOverlay), Nator.margins(context, Nator.wrap(), 0, 0, 8, 0));
-        actions.addView(Widgets.outlinedPill(context, null, "Test HTTPS and HTTP", () -> submit(true)),
+        actions.addView(host.dialogTextButton(Tr.t("Cancel", "إلغاء"), host::dismissTopOverlay), Nator.margins(context, Nator.wrap(), 0, 0, 8, 0));
+        actions.addView(Widgets.outlinedPill(context, null, Tr.t("Test HTTPS and HTTP", "اختبار HTTPS وHTTP"), () -> submit(true)),
                 Nator.margins(context, Nator.wrap(), 0, 0, 8, 0));
-        addButton = host.dialogFilledButton(prefill != null ? "Save" : "Add playlist", () -> submit(false));
+        addButton = host.dialogFilledButton(prefill != null ? Tr.t("Save", "حفظ") : Tr.t("Add playlist", "إضافة اشتراك"), () -> submit(false));
         actions.addView(addButton);
         card.addView(actions, Nator.margins(context, Nator.matchWidth(), 0, 18, 0, 0));
 
@@ -173,7 +174,7 @@ final class AddPlaylistDialog {
         card.addView(subtitle, Nator.margins(context, Nator.matchWidth(), 0, 6, 0, 0));
         if (!active) {
             card.setAlpha(0.55f);
-            card.setOnClickListener(v -> host.snack("ZTV connects with Xtream credentials"));
+            card.setOnClickListener(v -> host.snack(Tr.t("ZTV connects with Xtream credentials", "يتصل ZTV ببيانات Xtream")));
         }
         return card;
     }
@@ -217,13 +218,13 @@ final class AddPlaylistDialog {
 
     private void submit(boolean testOnly) {
         if (busy || !valid()) {
-            status.setText("Fill in server URL, username and password.");
+            status.setText(Tr.t("Fill in server URL, username and password.", "أدخل عنوان الخادم واسم المستخدم وكلمة المرور."));
             status.setTextColor(Nator.ERROR);
             return;
         }
         String host = ServerAddressPolicy.normalize(server.getText().toString());
         if (host.isEmpty()) {
-            status.setText("Enter a valid server address, e.g. example.com:8080");
+            status.setText(Tr.t("Enter a valid server address, e.g. example.com:8080", "أدخل عنوان خادم صحيحًا، مثل example.com:8080"));
             status.setTextColor(Nator.ERROR);
             server.requestFocus();
             return;
@@ -231,7 +232,7 @@ final class AddPlaylistDialog {
         XtreamCredentials credentials = new XtreamCredentials(host, username.getText().toString().trim(), password.getText().toString());
         busy = true;
         updateEnabled();
-        status.setText(testOnly ? "Testing connection..." : "Connecting to " + ServerAddressPolicy.display(host) + "...");
+        status.setText(testOnly ? Tr.t("Testing connection...", "جارٍ اختبار الاتصال...") : Tr.t("Connecting to " + ServerAddressPolicy.display(host) + "...", "جارٍ الاتصال بـ " + ServerAddressPolicy.display(host) + "..."));
         status.setTextColor(Nator.ON_SURFACE);
         this.host.api.authenticateAt(credentials, new XtreamApiClient.Callback<Boolean>() {
             @Override
@@ -239,7 +240,7 @@ final class AddPlaylistDialog {
                 busy = false;
                 updateEnabled();
                 if (!authenticated) {
-                    status.setText("Invalid account or inactive subscription.");
+                    status.setText(Tr.t("Invalid account or inactive subscription.", "الحساب غير صحيح أو الاشتراك غير فعّال."));
                     status.setTextColor(Nator.ERROR);
                     return;
                 }
@@ -262,8 +263,9 @@ final class AddPlaylistDialog {
                 busy = false;
                 updateEnabled();
                 status.setText(XtreamApiClient.isServerUnreachable(exception)
-                        ? "Can't reach " + ServerAddressPolicy.display(host) + ". Check the server address and try again."
-                        : "Unable to sign in. Check the account and try again.");
+                        ? Tr.t("Can't reach " + ServerAddressPolicy.display(host) + ". Check the server address and try again.",
+                        "تعذّر الوصول إلى " + ServerAddressPolicy.display(host) + ". تحقق من عنوان الخادم وحاول مرة أخرى.")
+                        : Tr.t("Unable to sign in. Check the account and try again.", "تعذّر تسجيل الدخول. تحقق من الحساب وحاول مرة أخرى."));
                 status.setTextColor(Nator.ERROR);
             }
         });

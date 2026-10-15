@@ -218,7 +218,9 @@ public final class PosterGridAdapter extends RecyclerView.Adapter<PosterGridAdap
             ratingText = Nator.text(context, "", 11.52f, Nator.W600, Nator.RATING_GREEN);
             rating.addView(ratingText);
             FrameLayout.LayoutParams ratingParams = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.END);
-            ratingParams.setMargins(0, Nator.px(context, 6), Nator.px(context, 6), 0);
+            ratingParams.setMargins(0, Nator.px(context, 6), 0, 0);
+            ratingParams.setMarginStart(0);
+            ratingParams.setMarginEnd(Nator.px(context, 6));
             art.addView(rating, ratingParams);
 
             // .type-badge (content cards): top-left, uppercase 9px/700.
@@ -228,7 +230,9 @@ public final class PosterGridAdapter extends RecyclerView.Adapter<PosterGridAdap
             Nator.pad(typeBadge, 6, 3, 6, 3);
             typeBadge.setVisibility(View.GONE);
             FrameLayout.LayoutParams badgeParams = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.START);
-            badgeParams.setMargins(Nator.px(context, 6), Nator.px(context, 6), 0, 0);
+            badgeParams.setMargins(0, Nator.px(context, 6), 0, 0);
+            badgeParams.setMarginStart(Nator.px(context, 6));
+            badgeParams.setMarginEnd(0);
             art.addView(typeBadge, badgeParams);
 
             // Remove (favorites): 28px dark circle with a close glyph, top-right.
@@ -237,7 +241,9 @@ public final class PosterGridAdapter extends RecyclerView.Adapter<PosterGridAdap
             removeButton.addView(Nator.icon(context, "close", 18, 0xFFFFFFFF), new FrameLayout.LayoutParams(-1, -1));
             removeButton.setVisibility(View.GONE);
             FrameLayout.LayoutParams removeParams = new FrameLayout.LayoutParams(Nator.px(context, 28), Nator.px(context, 28), Gravity.TOP | Gravity.END);
-            removeParams.setMargins(0, Nator.px(context, 4), Nator.px(context, 4), 0);
+            removeParams.setMargins(0, Nator.px(context, 4), 0, 0);
+            removeParams.setMarginStart(0);
+            removeParams.setMarginEnd(Nator.px(context, 4));
             art.addView(removeButton, removeParams);
             remove = removeButton;
 

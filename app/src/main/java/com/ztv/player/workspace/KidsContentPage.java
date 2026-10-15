@@ -108,7 +108,7 @@ final class KidsContentPage extends Page implements Catalog.LibraryListener {
         categoryGrid = Widgets.verticalGrid(context, 1, 2, 0);
         categoryGrid.setAdapter(categories);
         categoryGrid.setOnKeyInterceptListener(event -> {
-            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == Widgets.forwardKey()
                     && items.getItemCount() > 0) {
                 itemGrid.requestFocus();
                 return true;
@@ -132,7 +132,7 @@ final class KidsContentPage extends Page implements Catalog.LibraryListener {
         itemGrid = Widgets.verticalGrid(context, 2, 2, 12);
         itemGrid.setAdapter(items);
         itemGrid.setOnKeyInterceptListener(event -> {
-            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == Widgets.backKey()
                     && itemGrid.getSelectedPosition() % 2 == 0) {
                 categoryGrid.requestFocus();
                 return true;

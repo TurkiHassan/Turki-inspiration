@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import com.ztv.player.ui.Tr;
+
 /** Builds the hub's "Continue watching" rail and the copy that goes with resume points. */
 public final class ContinueWatchingPolicy {
     private ContinueWatchingPolicy() {
@@ -44,17 +46,18 @@ public final class ContinueWatchingPolicy {
         if (minutes >= 60L) {
             long hours = minutes / 60L;
             long rest = minutes % 60L;
-            return rest == 0L ? hours + "h left" : hours + "h " + rest + "m left";
+            return rest == 0L ? Tr.t(hours + "h left", "باقي " + hours + " س")
+                    : Tr.t(hours + "h " + rest + "m left", "باقي " + hours + " س " + rest + " د");
         }
-        return minutes + "m left";
+        return Tr.t(minutes + "m left", "باقي " + minutes + " د");
     }
 
     /** Label for the detail page's primary button. */
     public static String resumeLabel(long positionMs, long durationMs) {
         if (positionMs <= 0L) {
-            return "Play";
+            return Tr.t("Play", "تشغيل");
         }
         String left = timeLeft(positionMs, durationMs);
-        return left.isEmpty() ? "Resume" : "Resume  ·  " + left;
+        return left.isEmpty() ? Tr.t("Resume", "استئناف") : Tr.t("Resume", "استئناف") + "  ·  " + left;
     }
 }

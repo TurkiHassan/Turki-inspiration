@@ -142,7 +142,7 @@ public final class SettingsPage extends Page {
         Nator.pad(nav, 8, 0, 8, 0);
         for (String[] entry : NAV) {
             if (entry[1] == null) {
-                TextView group = Nator.text(context, entry[0], 11, Nator.W600, Nator.MUTED);
+                TextView group = Nator.text(context, groupLabel(entry[0]), 11, Nator.W600, Nator.MUTED);
                 group.setLetterSpacing(0.06f);
                 Nator.pad(group, 10, nav.getChildCount() == 0 ? 0 : 14, 10, 6);
                 nav.addView(group);
@@ -189,7 +189,7 @@ public final class SettingsPage extends Page {
         });
         // → goes to the open section's first control rather than the nearest view.
         item.setOnKeyListener((v, keyCode, event) -> {
-            if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_DPAD_RIGHT
+            if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == Widgets.forwardKey()
                     && firstControl != null && firstControl.isShown()) {
                 firstControl.requestFocus();
                 return true;
@@ -325,6 +325,15 @@ public final class SettingsPage extends Page {
                 toggleRow(appearance, Tr.t("Show titles under covers", "إظهار العناوين تحت الأغلفة"),
                         Tr.t("Turn off for a posters-only wall in movie and series grids: the title appears on the cover when you focus it. Live channels, search results and dashboard rails keep their labels.", "أوقفه لعرض الأغلفة وحدها في شبكات الأفلام والمسلسلات، ويظهر العنوان على الغلاف عند تحديده. القنوات ونتائج البحث وصفوف الرئيسية تبقى بعناوينها."),
                         host.prefs.bool(PREF_SHOW_TITLES, true), value -> host.prefs.put(PREF_SHOW_TITLES, value));
+                segmentedRow(appearance, Tr.t("Screen edges", "حواف الشاشة"),
+                        Tr.t("If your TV cuts off icons at the edges, make the margin bigger.",
+                                "إن كان تلفازك يقص الأيقونات عند الحواف، كبّر الهامش."),
+                        new String[]{SettingsStore.EDGES_NONE, SettingsStore.EDGES_SMALL, SettingsStore.EDGES_MEDIUM, SettingsStore.EDGES_LARGE},
+                        new String[]{"fullscreen", "crop_free", "crop_free", "crop_free"},
+                        host.settings.screenEdges(), value -> {
+                            host.settings.setScreenEdges(value);
+                            host.applyScreenEdges();
+                        });
                 LinearLayout startup = card(page, Tr.t("Startup", "البدء"));
                 segmentedRow(startup, Tr.t("Startup view", "شاشة البدء"),
                         Tr.t("Choose whether ZTV opens the dashboard or restores your last section-level view.", "اختر هل يفتح ZTV على الرئيسية أم على آخر قسم كنت فيه."),
@@ -487,9 +496,19 @@ public final class SettingsPage extends Page {
         return 0;
     }
 
+    private static String groupLabel(String group) {
+        switch (group) {
+            case "APP": return Tr.t(group, "التطبيق");
+            case "LIBRARY": return Tr.t(group, "المكتبة");
+            case "DATA": return Tr.t(group, "البيانات");
+            default: return group;
+        }
+    }
+
     /** Segmented options keep English values; only what's shown is translated. */
     private static String optionLabel(String option) {
         switch (option) {
+            case "None": return Tr.t(option, "بلا");
             case "Small": return Tr.t(option, "صغير");
             case "Medium": return Tr.t(option, "متوسط");
             case "Large": return Tr.t(option, "كبير");
@@ -584,7 +603,9 @@ public final class SettingsPage extends Page {
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
                     Nator.px(context, state[0] ? 24 : 16), Nator.px(context, state[0] ? 24 : 16),
                     Gravity.CENTER_VERTICAL | (state[0] ? Gravity.END : Gravity.START));
-            params.setMargins(Nator.px(context, state[0] ? 0 : 8), 0, Nator.px(context, state[0] ? 4 : 0), 0);
+            params.setMargins(0, 0, 0, 0);
+            params.setMarginStart(Nator.px(context, state[0] ? 0 : 8));
+            params.setMarginEnd(Nator.px(context, state[0] ? 4 : 0));
             handle.setLayoutParams(params);
         };
         toggle.addView(handle);

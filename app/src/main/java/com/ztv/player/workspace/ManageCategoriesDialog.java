@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import com.ztv.player.data.XtreamContentType;
 import com.ztv.player.data.XtreamMediaSection;
+import com.ztv.player.ui.Tr;
 
 import java.util.HashSet;
 import java.util.List;
@@ -38,16 +39,16 @@ final class ManageCategoriesDialog {
         LinearLayout card = Nator.column(context);
         card.setBackground(Nator.rounded(context, 0xFF121316, 28));
         Nator.pad(card, 24, 22, 24, 18);
-        String label = type == XtreamContentType.LIVE ? "Live TV" : type == XtreamContentType.SERIES ? "Series" : "Movies";
-        card.addView(Nator.text(context, "Manage categories", 20, Nator.W600, Nator.HEADING));
+        String label = type == XtreamContentType.LIVE ? Tr.t("Live TV", "القنوات") : type == XtreamContentType.SERIES ? Tr.t("Series", "المسلسلات") : Tr.t("Movies", "الأفلام");
+        card.addView(Nator.text(context, Tr.t("Manage categories", "إدارة الفئات"), 20, Nator.W600, Nator.HEADING));
         card.addView(Nator.text(context, label + " · uncheck a category to hide it", 13, Nator.W400, Nator.BODY),
                 Nator.margins(context, Nator.wrap(), 0, 4, 0, 0));
         LinearLayout bulk = Nator.row(context);
-        bulk.addView(host.dialogTextButton("Show all", () -> {
+        bulk.addView(host.dialogTextButton(Tr.t("Show all", "إظهار الكل"), () -> {
             hidden.clear();
             render();
         }), Nator.margins(context, Nator.wrap(), 0, 0, 8, 0));
-        bulk.addView(host.dialogTextButton("Hide all", () -> {
+        bulk.addView(host.dialogTextButton(Tr.t("Hide all", "إخفاء الكل"), () -> {
             for (XtreamMediaSection section : sections) {
                 hidden.add(section.title());
             }
@@ -61,8 +62,8 @@ final class ManageCategoriesDialog {
         card.addView(scroll, new LinearLayout.LayoutParams(-1, Nator.px(context, 360)));
         LinearLayout actions = Nator.row(context);
         actions.setGravity(Gravity.END);
-        actions.addView(host.dialogTextButton("Cancel", host::dismissTopOverlay), Nator.margins(context, Nator.wrap(), 0, 0, 8, 0));
-        TextView save = host.dialogFilledButton("Save", () -> {
+        actions.addView(host.dialogTextButton(Tr.t("Cancel", "إلغاء"), host::dismissTopOverlay), Nator.margins(context, Nator.wrap(), 0, 0, 8, 0));
+        TextView save = host.dialogFilledButton(Tr.t("Save", "حفظ"), () -> {
             host.settings.setHiddenSections(type, hidden);
             host.dismissTopOverlay();
             if (onSaved != null) {
@@ -107,7 +108,7 @@ final class ManageCategoriesDialog {
             list.addView(row, Nator.matchWidth());
         }
         if (sections.isEmpty()) {
-            View empty = Widgets.emptyState(context, null, "No categories", null);
+            View empty = Widgets.emptyState(context, null, Tr.t("No categories", "لا فئات"), null);
             list.addView(empty);
         }
     }

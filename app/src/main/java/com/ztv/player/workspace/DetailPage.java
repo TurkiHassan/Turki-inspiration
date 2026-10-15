@@ -24,6 +24,7 @@ import com.ztv.player.data.XtreamMovieInfo;
 import com.ztv.player.data.XtreamSeriesDetail;
 import com.ztv.player.ui.PosterLoader;
 import com.ztv.player.ui.PosterUrls;
+import com.ztv.player.ui.Tr;
 
 import org.json.JSONObject;
 
@@ -231,7 +232,7 @@ public final class DetailPage extends Page {
         String posterUrl = PosterUrls.isUsable(item.imageUrl()) ? item.imageUrl() : "";
         PosterLoader.load(posterUrl, poster, false);
         loadBackdrop(posterUrl, true);
-        String kindLabel = item.type() == XtreamContentType.SERIES ? "Series" : "Movie";
+        String kindLabel = item.type() == XtreamContentType.SERIES ? Tr.t("Series", "مسلسل") : Tr.t("Movie", "فيلم");
         kind.setText((kindLabel + " · " + host.playlistTitle()).toUpperCase(Locale.ROOT));
         renderChips();
         renderActions();
@@ -333,7 +334,8 @@ public final class DetailPage extends Page {
         } else {
             WatchProgressStore.EntrySnapshot snapshot = host.progress.snapshot(XtreamContentType.MOVIE, item.id());
             if (snapshot != null && snapshot.inProgress()) {
-                meta = "Resume · " + snapshot.progressPercent() + "% watched";
+                meta = Tr.t("Resume · " + snapshot.progressPercent() + "% watched",
+                        "استئناف · شوهد " + snapshot.progressPercent() + "%");
             } else {
                 meta = info == null ? "" : formatDuration(info.duration());
             }
@@ -341,7 +343,7 @@ public final class DetailPage extends Page {
         XtreamMediaItem playTarget = target;
         String label = item.type() == XtreamContentType.MOVIE
                 && host.progress.snapshot(XtreamContentType.MOVIE, item.id()) != null
-                && host.progress.snapshot(XtreamContentType.MOVIE, item.id()).inProgress() ? "Resume" : "Play";
+                && host.progress.snapshot(XtreamContentType.MOVIE, item.id()).inProgress() ? Tr.t("Resume", "استئناف") : Tr.t("Play", "تشغيل");
         LinearLayout play = Widgets.lightPrimary(context, "play_arrow", label, meta, () -> {
             if (item.type() == XtreamContentType.SERIES) {
                 if (playTarget != null) {
@@ -356,15 +358,15 @@ public final class DetailPage extends Page {
         }
         playButton = play;
         actions.addView(play, Nator.margins(context, Nator.size(context, -2, 44), 0, 0, 10, 0));
-        favoriteButton = Widgets.ghostIconButton(context, "favorite_border", "Add to favorites", this::toggleFavorite);
+        favoriteButton = Widgets.ghostIconButton(context, "favorite_border", Tr.t("Add to favorites", "إضافة إلى المفضلة"), this::toggleFavorite);
         actions.addView(favoriteButton, Nator.margins(context, Nator.size(context, 44, 44), 0, 0, 10, 0));
         updateFavorite();
         if (item.type() == XtreamContentType.MOVIE) {
-            watchedButton = Widgets.ghostIconButton(context, "check_circle_outline", "Mark as watched", this::toggleWatched);
+            watchedButton = Widgets.ghostIconButton(context, "check_circle_outline", Tr.t("Mark as watched", "تحديد كمُشاهَد"), this::toggleWatched);
             actions.addView(watchedButton, Nator.margins(context, Nator.size(context, 44, 44), 0, 0, 10, 0));
             updateWatched();
         }
-        FrameLayout more = Widgets.ghostIconButton(context, "more_horiz", "More", null);
+        FrameLayout more = Widgets.ghostIconButton(context, "more_horiz", Tr.t("More", "المزيد"), null);
         more.setOnClickListener(v -> showMore(v));
         actions.addView(more, Nator.size(context, 44, 44));
         if (scroll != null && scroll.hasFocus() == false && host.top() == this) {
@@ -379,7 +381,7 @@ public final class DetailPage extends Page {
     private void toggleFavorite() {
         boolean now = host.favorites.toggle(item);
         updateFavorite();
-        host.snack(now ? "Added to favorites" : "Removed from favorites");
+        host.snack(now ? Tr.t("Added to favorites", "أُضيف إلى المفضلة") : Tr.t("Removed from favorites", "أُزيل من المفضلة"));
     }
 
     private void updateFavorite() {
@@ -415,18 +417,18 @@ public final class DetailPage extends Page {
         LinearLayout menu = host.menuPanel();
         if (!host.kidsMode()) {
             // Another player would escape Kids mode's watch-time limit.
-            host.menuItem(menu, "Open in external player", "open_in_new", false, () -> {
+            host.menuItem(menu, Tr.t("Open in external player", "فتح في مشغّل خارجي"), "open_in_new", false, () -> {
                 XtreamMediaItem target = item.type() == XtreamContentType.SERIES ? resumeEpisode() : item;
                 if (target != null) {
                     openExternally(target);
                 }
             });
         }
-        host.menuItem(menu, host.favorites.isFavorite(item.type(), item.id()) ? "Remove from favorites" : "Add to favorites",
+        host.menuItem(menu, host.favorites.isFavorite(item.type(), item.id()) ? Tr.t("Remove from favorites", "إزالة من المفضلة") : Tr.t("Add to favorites", "إضافة إلى المفضلة"),
                 "favorite_border", false, this::toggleFavorite);
-        host.menuItem(menu, "Remove from recently viewed", "history", false, () -> {
+        host.menuItem(menu, Tr.t("Remove from recently viewed", "إزالة من «شوهد مؤخرًا»"), "history", false, () -> {
             host.history.remove(item.type(), item.id());
-            host.snack("Removed from recently viewed");
+            host.snack(Tr.t("Removed from recently viewed", "أُزيل من «شوهد مؤخرًا»"));
         });
         host.showMenu(anchor, menu);
     }
@@ -435,9 +437,9 @@ public final class DetailPage extends Page {
         android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
         intent.setDataAndType(android.net.Uri.parse(host.streamUrl(target)), "video/*");
         try {
-            host.startActivity(android.content.Intent.createChooser(intent, "Open with"));
+            host.startActivity(android.content.Intent.createChooser(intent, Tr.t("Open with", "فتح باستخدام")));
         } catch (Exception exception) {
-            host.snack("No external player available");
+            host.snack(Tr.t("No external player available", "لا يوجد مشغّل خارجي"));
         }
     }
 
@@ -450,20 +452,20 @@ public final class DetailPage extends Page {
         List<String> cast = names(info.cast());
         if (!cast.isEmpty()) {
             LinearLayout line = Nator.row(context);
-            line.addView(Nator.text(context, "Starring", 13, Nator.W500, Nator.EYEBROW), Nator.size(context, 72, -2));
+            line.addView(Nator.text(context, Tr.t("Starring", "بطولة"), 13, Nator.W500, Nator.EYEBROW), Nator.size(context, 72, -2));
             StringBuilder shown = new StringBuilder();
             for (int i = 0; i < Math.min(3, cast.size()); i++) {
                 shown.append(i == 0 ? "" : ", ").append(cast.get(i));
             }
             line.addView(Nator.line(context, shown.toString(), 13, Nator.W400, Nator.HEADING), new LinearLayout.LayoutParams(0, -2, 1f));
             if (cast.size() > 3) {
-                line.addView(Nator.text(context, "and more", 13, Nator.W400, Nator.BODY), Nator.margins(context, Nator.wrap(), 8, 0, 0, 0));
+                line.addView(Nator.text(context, Tr.t("and more", "وآخرون"), 13, Nator.W400, Nator.BODY), Nator.margins(context, Nator.wrap(), 8, 0, 0, 0));
             }
             left.addView(line, Nator.matchWidth());
         }
         if (!info.director().trim().isEmpty()) {
             LinearLayout line = Nator.row(context);
-            line.addView(Nator.text(context, "Director", 13, Nator.W500, Nator.EYEBROW), Nator.size(context, 72, -2));
+            line.addView(Nator.text(context, Tr.t("Director", "إخراج"), 13, Nator.W500, Nator.EYEBROW), Nator.size(context, 72, -2));
             line.addView(Nator.line(context, info.director().trim(), 13, Nator.W400, Nator.HEADING), new LinearLayout.LayoutParams(0, -2, 1f));
             left.addView(line, Nator.margins(context, Nator.matchWidth(), 0, 4, 0, 0));
         }
@@ -473,7 +475,7 @@ public final class DetailPage extends Page {
         String rating = normalizeRating(info.rating());
         if (!rating.isEmpty()) {
             LinearLayout box = Nator.column(context);
-            box.addView(Nator.text(context, "Rating", 13, Nator.W400, Nator.MUTED));
+            box.addView(Nator.text(context, Tr.t("Rating", "التقييم"), 13, Nator.W400, Nator.MUTED));
             box.addView(Nator.text(context, rating, 14, Nator.W500, Nator.HEADING), Nator.margins(context, Nator.wrap(), 0, 3, 0, 0));
             wrap.addView(box, Nator.margins(context, Nator.wrap(), 24, 0, 0, 0));
         }
@@ -487,7 +489,7 @@ public final class DetailPage extends Page {
         }
         List<String[]> people = new ArrayList<>();
         if (!info.director().trim().isEmpty()) {
-            people.add(new String[]{info.director().trim(), "Director"});
+            people.add(new String[]{info.director().trim(), Tr.t("Director", "إخراج")});
         }
         for (String name : names(info.cast())) {
             people.add(new String[]{name, ""});
@@ -496,7 +498,7 @@ public final class DetailPage extends Page {
             return;
         }
         LinearLayout header = Nator.row(context);
-        header.addView(Nator.text(context, "Cast & crew", 18, Nator.W600, Nator.HEADING));
+        header.addView(Nator.text(context, Tr.t("Cast & crew", "طاقم العمل"), 18, Nator.W600, Nator.HEADING));
         header.addView(Nator.text(context, String.valueOf(people.size()), 12.5f, Nator.W400, Nator.EYEBROW), Nator.margins(context, Nator.wrap(), 10, 0, 0, 0));
         castSection.addView(header, Nator.margins(context, Nator.wrap(), 0, 36, 0, 0));
         HorizontalScrollView strip = new HorizontalScrollView(context);
@@ -589,7 +591,7 @@ public final class DetailPage extends Page {
     private void renderEpisodesLoading() {
         episodesSection.removeAllViews();
         LinearLayout header = Nator.row(context);
-        header.addView(Nator.text(context, "Episodes", 18, Nator.W600, Nator.HEADING));
+        header.addView(Nator.text(context, Tr.t("Episodes", "الحلقات"), 18, Nator.W600, Nator.HEADING));
         episodesSection.addView(header, Nator.margins(context, Nator.wrap(), 0, 36, 0, 0));
         for (int i = 0; i < 3; i++) {
             LinearLayout row = Nator.row(context);
@@ -608,8 +610,8 @@ public final class DetailPage extends Page {
 
     private void renderEpisodesError() {
         episodesSection.removeAllViews();
-        episodesSection.addView(Widgets.emptyState(context, "error_outline", "Episodes unavailable",
-                "The series details could not be loaded. Try again in a moment."));
+        episodesSection.addView(Widgets.emptyState(context, "error_outline", Tr.t("Episodes unavailable", "تعذّر عرض الحلقات"),
+                Tr.t("The series details could not be loaded. Try again in a moment.", "تعذّر تحميل تفاصيل المسلسل. حاول مرة أخرى بعد قليل.")));
     }
 
     private void renderEpisodes() {
@@ -622,13 +624,13 @@ public final class DetailPage extends Page {
             episodes = new ArrayList<>();
         }
         LinearLayout header = Nator.row(context);
-        header.addView(Nator.text(context, "Episodes", 18, Nator.W600, Nator.HEADING), Nator.margins(context, Nator.wrap(), 0, 0, 10, 0));
+        header.addView(Nator.text(context, Tr.t("Episodes", "الحلقات"), 18, Nator.W600, Nator.HEADING), Nator.margins(context, Nator.wrap(), 0, 0, 10, 0));
         HorizontalScrollView pillsScroll = new HorizontalScrollView(context);
         pillsScroll.setHorizontalScrollBarEnabled(false);
         LinearLayout pills = Nator.row(context);
         for (String season : seasons.keySet()) {
             boolean selected = season.equals(selectedSeason);
-            TextView pill = Nator.text(context, "Season " + season, 13, selected ? Nator.W500 : Nator.W400,
+            TextView pill = Nator.text(context, Tr.t("Season ", "الموسم ") + season, 13, selected ? Nator.W500 : Nator.W400,
                     selected ? Nator.HEADING : Nator.BODY);
             pill.setGravity(Gravity.CENTER);
             Nator.pad(pill, 12, 0, 12, 0);
@@ -650,7 +652,7 @@ public final class DetailPage extends Page {
         }
         pillsScroll.addView(pills);
         header.addView(pillsScroll);
-        header.addView(Nator.text(context, Nator.plural(episodes.size(), "episode", "episodes"), 12.5f, Nator.W400, Nator.EYEBROW),
+        header.addView(Nator.text(context, Nator.plural(episodes.size(), "episode", "episodes", "حلقة واحدة", "حلقتان", "حلقات", "حلقة"), 12.5f, Nator.W400, Nator.EYEBROW),
                 Nator.margins(context, Nator.wrap(), 10, 0, 0, 0));
         header.addView(Nator.spacer(context));
         header.addView(viewToggle());
@@ -809,9 +811,9 @@ public final class DetailPage extends Page {
             return "";
         }
         if (minutes < 60) {
-            return minutes + " min";
+            return minutes + Tr.t(" min", " د");
         }
-        return (minutes / 60) + " h " + (minutes % 60) + " min";
+        return (minutes / 60) + Tr.t(" h ", " س ") + (minutes % 60) + Tr.t(" min", " د");
     }
 
     static String yearOf(String date) {
