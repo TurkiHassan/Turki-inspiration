@@ -17,6 +17,11 @@ with the Xtream Codes server address, username and password from their own provi
   words in any order, number words ("MBC one", "روتانا واحد"), and Arabic spellings of Latin
   channel names ("ام بي سي اكشن" finds "MBC-Action-HD", "الجزيرة" finds "Al Jazeera")
 - Dashboard, favorites, watch history and resume ("continue watching")
+- Kids mode: a parent PIN, an allow-list of categories plus single channels, movies and series
+  (anything the provider adds later stays hidden), a separate kids profile for favorites and
+  history, a daily watch-time limit and bedtime, and a lock screen only the PIN opens
+- Full Arabic interface with right-to-left layout (Settings › General › App language)
+- Screen edges setting that shrinks the interface for TVs that crop the picture (overscan)
 - Short EPG (now / next) on live channels
 - Playback through AndroidX Media3 (ExoPlayer) with auto-reconnect and tuned live/VOD buffering
 - FFmpeg audio decoder fallback (AC-3, E-AC-3, DTS) for boxes without hardware support, plus automatic decoder fallback

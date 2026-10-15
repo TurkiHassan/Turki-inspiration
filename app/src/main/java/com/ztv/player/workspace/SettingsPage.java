@@ -464,7 +464,9 @@ public final class SettingsPage extends Page {
         }
         return Tr.t("Allowed: " + Nator.plural(categories, "category", "categories")
                         + " and " + Nator.plural(items, "single item", "single items"),
-                "مسموح: " + categories + " فئة، و" + items + " عنصر منفرد");
+                "مسموح: " + (categories == 0 ? "لا فئات" : Tr.count(categories, "", "", "فئة واحدة", "فئتان", "فئات", "فئة"))
+                        + "، و" + (items == 0 ? "لا عناصر منفردة"
+                        : Tr.count(items, "", "", "عنصر منفرد واحد", "عنصران منفردان", "عناصر منفردة", "عنصرًا منفردًا")));
     }
 
     private static String[] clockLabels(int[] minutes) {
@@ -557,14 +559,14 @@ public final class SettingsPage extends Page {
         page.addView(Nator.text(context, title, 26, Nator.W600, Nator.HEADING));
         TextView desc = Nator.text(context, description, 13.5f, Nator.W400, Nator.BODY);
         Nator.lineHeight(desc, 19.6f);
-        page.addView(desc, Nator.margins(context, Nator.size(context, 800, -2), 0, 6, 0, 0));
+        page.addView(desc, Nator.margins(context, Nator.matchWidth(), 0, 6, 0, 0));
     }
 
     private LinearLayout card(LinearLayout page, String title) {
         page.addView(Nator.text(context, title, 14, Nator.W600, Nator.HEADING), Nator.margins(context, Nator.wrap(), 2, 34, 0, 0));
         LinearLayout card = Nator.column(context);
         card.setBackground(Nator.roundedStroke(context, Nator.WIDGET_BG, 12, 1, 0x12FFFFFF));
-        page.addView(card, Nator.margins(context, Nator.size(context, 800, -2), 0, 14, 0, 0));
+        page.addView(card, Nator.margins(context, Nator.matchWidth(), 0, 14, 0, 0));
         return card;
     }
 
@@ -579,7 +581,7 @@ public final class SettingsPage extends Page {
         if (description != null && !description.isEmpty()) {
             TextView desc = Nator.text(context, description, 12.5f, Nator.W400, Nator.alpha(0xFFE3E2E6, 0.68f));
             Nator.lineHeight(desc, 18.75f);
-            texts.addView(desc, Nator.margins(context, Nator.size(context, 479, -2), 0, 3, 0, 0));
+            texts.addView(desc, Nator.margins(context, Nator.matchWidth(), 0, 3, 0, 0));
         }
         row.addView(texts, new LinearLayout.LayoutParams(0, -2, 1f));
         card.addView(row, Nator.matchWidth());

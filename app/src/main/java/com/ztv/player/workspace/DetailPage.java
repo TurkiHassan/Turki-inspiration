@@ -475,7 +475,9 @@ public final class DetailPage extends Page {
         String rating = normalizeRating(info.rating());
         if (!rating.isEmpty()) {
             LinearLayout box = Nator.column(context);
-            box.addView(Nator.text(context, Tr.t("Rating", "التقييم"), 13, Nator.W400, Nator.MUTED));
+            box.setMinimumWidth(Nator.px(context, 64));
+            TextView ratingLabel = Nator.line(context, Tr.t("Rating", "التقييم"), 13, Nator.W400, Nator.MUTED);
+            box.addView(ratingLabel, Nator.matchWidth());
             box.addView(Nator.text(context, rating, 14, Nator.W500, Nator.HEADING), Nator.margins(context, Nator.wrap(), 0, 3, 0, 0));
             wrap.addView(box, Nator.margins(context, Nator.wrap(), 24, 0, 0, 0));
         }
