@@ -7,6 +7,7 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.util.LruCache;
 
+import com.ztv.player.data.KidsPolicy;
 import com.ztv.player.data.LibraryDiskCache;
 import com.ztv.player.data.XtreamAccountInfo;
 import com.ztv.player.data.XtreamApiClient;
@@ -70,6 +71,9 @@ public final class Catalog {
     private XtreamAccountInfo accountInfo;
     private boolean shutdown;
     private final long startedAt = SystemClock.elapsedRealtime();
+    private final Map<XtreamContentType, List<XtreamMediaSection>> visible = new EnumMap<>(XtreamContentType.class);
+    private final Map<XtreamContentType, List<XtreamMediaSection>> visibleSource = new EnumMap<>(XtreamContentType.class);
+    private KidsPolicy kids;
 
     public Catalog(Activity activity, XtreamApiClient api, LibraryDiskCache diskCache) {
         this.activity = activity;
@@ -104,9 +108,39 @@ public final class Catalog {
         globalListeners.remove(listener);
     }
 
-    /** Sections in memory right now (possibly stale), or null. */
+    /**
+     * Kids mode allow-list, or null for the full catalog. Every list, search and rail reads
+     * through {@link #cached} and the load callbacks, so this one switch filters them all.
+     */
+    public void setKidsPolicy(KidsPolicy policy) {
+        kids = policy;
+        visible.clear();
+        visibleSource.clear();
+    }
+
+    public boolean kidsMode() {
+        return kids != null;
+    }
+
+    /** Sections in memory right now (possibly stale), or null; filtered in Kids mode. */
     public List<XtreamMediaSection> cached(XtreamContentType type) {
+        return view(type, memory.get(type));
+    }
+
+    /** The whole catalog even in Kids mode, for the parent's picker. */
+    public List<XtreamMediaSection> cachedUnfiltered(XtreamContentType type) {
         return memory.get(type);
+    }
+
+    private List<XtreamMediaSection> view(XtreamContentType type, List<XtreamMediaSection> sections) {
+        if (kids == null || sections == null) {
+            return sections;
+        }
+        if (visibleSource.get(type) != sections) {
+            visible.put(type, kids.filter(sections));
+            visibleSource.put(type, sections);
+        }
+        return visible.get(type);
     }
 
     public boolean isLoaded(XtreamContentType type) {
@@ -126,7 +160,7 @@ public final class Catalog {
         boolean fresh = at != null && SystemClock.elapsedRealtime() - at < MEMORY_TTL_MS;
         if (inMemory != null && !forceNetwork) {
             if (listener != null) {
-                listener.onLibrary(type, inMemory, false);
+                listener.onLibrary(type, view(type, inMemory), false);
             }
             if (!fresh) {
                 fetchNetwork(type, null);
@@ -151,7 +185,7 @@ public final class Catalog {
                     }
                     Log.d(TAG, "perf " + type + "_disk_painted elapsedMs=" + (SystemClock.elapsedRealtime() - startedAt));
                     if (listener != null) {
-                        listener.onLibrary(type, memory.get(type), false);
+                        listener.onLibrary(type, cached(type), false);
                     }
                     fetchNetwork(type, listener);
                 } else {
@@ -191,11 +225,11 @@ public final class Catalog {
                 List<LibraryListener> listeners = waiting.remove(type);
                 if (listeners != null) {
                     for (LibraryListener l : listeners) {
-                        l.onLibrary(type, result, true);
+                        l.onLibrary(type, view(type, result), true);
                     }
                 }
                 for (LibraryListener l : new ArrayList<>(globalListeners)) {
-                    l.onLibrary(type, result, true);
+                    l.onLibrary(type, view(type, result), true);
                 }
             }
 
@@ -263,7 +297,7 @@ public final class Catalog {
     }
 
     public int count(XtreamContentType type) {
-        List<XtreamMediaSection> sections = memory.get(type);
+        List<XtreamMediaSection> sections = cached(type);
         return sections == null ? 0 : allItems(sections).size();
     }
 

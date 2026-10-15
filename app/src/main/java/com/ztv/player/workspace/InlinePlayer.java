@@ -185,6 +185,10 @@ public final class InlinePlayer extends FrameLayout {
         return player != null;
     }
 
+    public boolean isPlaying() {
+        return player != null && player.isPlaying();
+    }
+
     public void pause() {
         if (player != null) {
             player.pause();

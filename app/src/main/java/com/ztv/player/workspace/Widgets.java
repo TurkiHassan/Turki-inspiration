@@ -259,4 +259,24 @@ public final class Widgets {
     public static TextView glyphOf(FrameLayout iconButton) {
         return (TextView) iconButton.getChildAt(0);
     }
+
+    /** Keeps D-pad focus inside the card: the views behind it stay focusable. */
+    public static void trapFocus(View view, boolean up, boolean left, boolean right, boolean down) {
+        if (view.getId() == View.NO_ID) {
+            view.setId(View.generateViewId());
+        }
+        int self = view.getId();
+        if (up) {
+            view.setNextFocusUpId(self);
+        }
+        if (left) {
+            view.setNextFocusLeftId(self);
+        }
+        if (right) {
+            view.setNextFocusRightId(self);
+        }
+        if (down) {
+            view.setNextFocusDownId(self);
+        }
+    }
 }

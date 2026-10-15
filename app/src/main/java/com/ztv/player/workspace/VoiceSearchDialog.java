@@ -69,7 +69,7 @@ final class VoiceSearchDialog implements RecognitionListener {
         mic.setBackground(Nator.oval(MIC_IDLE));
         mic.addView(Nator.icon(host, "mic", 40, 0xFFFFFFFF), new FrameLayout.LayoutParams(-1, -1));
         mic.setOnClickListener(v -> listen());
-        trap(mic, true, true, true, false);
+        Widgets.trapFocus(mic, true, true, true, false);
         stage.addView(mic, new FrameLayout.LayoutParams(Nator.px(host, 84), Nator.px(host, 84), Gravity.CENTER));
         card.addView(stage, Nator.size(host, 140, 120));
 
@@ -89,7 +89,7 @@ final class VoiceSearchDialog implements RecognitionListener {
         LinearLayout actions = Nator.row(host);
         actions.setGravity(Gravity.END);
         TextView cancel = host.dialogTextButton("Cancel", host::dismissTopOverlay);
-        trap(cancel, false, true, true, true);
+        Widgets.trapFocus(cancel, false, true, true, true);
         actions.addView(cancel);
         card.addView(actions, Nator.margins(host, Nator.matchWidth(), 0, 10, 0, 0));
 
@@ -97,26 +97,6 @@ final class VoiceSearchDialog implements RecognitionListener {
         host.showDialog(card, 500, this::release);
         mic.requestFocus();
         listen();
-    }
-
-    /** Keeps D-pad focus inside the card: the views behind it stay focusable. */
-    private static void trap(View view, boolean up, boolean left, boolean right, boolean down) {
-        if (view.getId() == View.NO_ID) {
-            view.setId(View.generateViewId());
-        }
-        int self = view.getId();
-        if (up) {
-            view.setNextFocusUpId(self);
-        }
-        if (left) {
-            view.setNextFocusLeftId(self);
-        }
-        if (right) {
-            view.setNextFocusRightId(self);
-        }
-        if (down) {
-            view.setNextFocusDownId(self);
-        }
     }
 
     /** Auto hears both languages; Arabic also finds Latin channel names (see SearchMatcher). */
@@ -142,7 +122,7 @@ final class VoiceSearchDialog implements RecognitionListener {
                 languages.getChildAt(position).requestFocus();
                 listen();
             });
-            trap(chip, false, i == 0, i == labels.length - 1, false);
+            Widgets.trapFocus(chip, false, i == 0, i == labels.length - 1, false);
             languages.addView(chip, Nator.margins(host, Nator.size(host, -2, 32), 6, 0, 6, 0));
         }
     }

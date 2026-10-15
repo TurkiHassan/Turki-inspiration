@@ -17,7 +17,13 @@ public final class HistoryStore {
     private final SharedPreferences preferences;
 
     public HistoryStore(Context context) {
-        preferences = context.getApplicationContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        this(context, null);
+    }
+
+    /** {@code profile} keeps a separate list, e.g. "kids" for Kids mode; null is the main one. */
+    public HistoryStore(Context context, String profile) {
+        preferences = context.getApplicationContext().getSharedPreferences(
+                profile == null ? PREFS_NAME : PREFS_NAME + "_" + profile, Context.MODE_PRIVATE);
     }
 
     private static String key(XtreamContentType type) {

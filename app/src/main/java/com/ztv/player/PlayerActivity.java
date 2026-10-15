@@ -40,6 +40,7 @@ import com.ztv.player.data.SettingsStore;
 import com.ztv.player.data.EpisodePlaybackQueue;
 import com.ztv.player.data.HostFailoverPolicy;
 import com.ztv.player.data.HistoryStore;
+import com.ztv.player.data.KidsStore;
 import com.ztv.player.data.HttpStatusResolver;
 import com.ztv.player.data.PlaybackFailurePolicy;
 import com.ztv.player.data.ServerConfigStore;
@@ -56,6 +57,7 @@ import com.ztv.player.ui.ZtvUi;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Calendar;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -64,6 +66,7 @@ import java.util.Set;
 
 public final class PlayerActivity extends Activity {
     private static final String TAG = "ZTV";
+    private static final long KIDS_TICK_MS = 15_000L;
     public static final String EXTRA_STREAM_URL = "com.ztv.player.STREAM_URL";
     public static final String EXTRA_CHANNEL_NAME = "com.ztv.player.CHANNEL_NAME";
     public static final String EXTRA_RESUME_POSITION = "com.ztv.player.RESUME_POSITION";
@@ -92,6 +95,28 @@ public final class PlayerActivity extends Activity {
     private static final long LIVE_EDGE_CHECK_MS = 1000L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private KidsStore kidsStore;
+    private long kidsTickAt;
+    private final Runnable kidsTick = new Runnable() {
+        @Override
+        public void run() {
+            long now = SystemClock.elapsedRealtime();
+            Calendar today = Calendar.getInstance();
+            if (player != null && player.isPlaying()) {
+                kidsStore.addWatched(KidsStore.dayKey(today), now - kidsTickAt);
+            }
+            kidsTickAt = now;
+            if (kidsStore.block(today) != null) {
+                // The workspace shows the Kids lock screen when it comes back.
+                if (player != null) {
+                    player.pause();
+                }
+                finish();
+                return;
+            }
+            handler.postDelayed(this, KIDS_TICK_MS);
+        }
+    };
     private long liveEdgeStopMs = LiveEdgePolicy.CATCH_UP_STOP_MS;
     private final Runnable liveEdgeTick = new Runnable() {
         @Override
@@ -177,9 +202,15 @@ public final class PlayerActivity extends Activity {
         }
         String channelName = getIntent().getStringExtra(EXTRA_CHANNEL_NAME);
 
-        progressStore = new WatchProgressStore(this);
+        kidsStore = new KidsStore(this);
+        if (kidsStore.block(Calendar.getInstance()) != null) {
+            finish();
+            return;
+        }
+        String profile = kidsStore.isActive() ? "kids" : null;
+        progressStore = new WatchProgressStore(this, profile);
         settingsStore = new SettingsStore(this);
-        historyStore = new HistoryStore(this);
+        historyStore = new HistoryStore(this, profile);
         resumePositionMs = getIntent().getLongExtra(EXTRA_RESUME_POSITION, 0L);
         trackedItem = buildTrackedItem(channelName);
         loadNextEpisodeQueue();
@@ -1011,6 +1042,29 @@ public final class PlayerActivity extends Activity {
         if (hasFocus) {
             enableImmersiveMode();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (kidsStore != null && kidsStore.isActive()) {
+            kidsTickAt = SystemClock.elapsedRealtime();
+            handler.removeCallbacks(kidsTick);
+            handler.postDelayed(kidsTick, KIDS_TICK_MS);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (kidsStore != null && kidsStore.isActive()) {
+            handler.removeCallbacks(kidsTick);
+            long now = SystemClock.elapsedRealtime();
+            if (player != null && player.isPlaying()) {
+                kidsStore.addWatched(KidsStore.dayKey(Calendar.getInstance()), now - kidsTickAt);
+            }
+            kidsTickAt = now;
+        }
+        super.onPause();
     }
 
     @Override

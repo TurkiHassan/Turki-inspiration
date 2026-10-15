@@ -200,6 +200,11 @@ public final class CatalogPage extends Page implements Catalog.LibraryListener {
     }
 
     @Override
+    public boolean playingMedia() {
+        return inlinePlayer != null && inlinePlayer.isPlaying();
+    }
+
+    @Override
     public void onHostStopped() {
         releaseInlinePlayback();
     }

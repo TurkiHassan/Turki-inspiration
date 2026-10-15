@@ -40,6 +40,7 @@ import com.ztv.player.R;
 import com.ztv.player.data.EpisodePlaybackQueue;
 import com.ztv.player.data.FavoritesStore;
 import com.ztv.player.data.HistoryStore;
+import com.ztv.player.data.KidsStore;
 import com.ztv.player.data.LibraryDiskCache;
 import com.ztv.player.data.ServerAddressPolicy;
 import com.ztv.player.data.ServerConfigStore;
@@ -53,6 +54,7 @@ import com.ztv.player.data.XtreamSessionStore;
 import com.ztv.player.data.XtreamUrlFactory;
 import com.ztv.player.ui.PosterLoader;
 import com.ztv.player.ui.PosterUrls;
+import com.ztv.player.ui.Tr;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -83,6 +85,13 @@ public final class WorkspaceActivity extends Activity {
     SettingsStore settings;
     ServerConfigStore serverConfig;
     WorkspacePrefs prefs;
+    KidsStore kids;
+    private KidsGuard kidsGuard;
+    private FrameLayout lockLayer;
+    private View headerAdd;
+    private View switcherView;
+    private View kidsBadge;
+    private View railKidsExit;
     private XtreamSessionStore sessionStore;
     private XtreamCredentials credentials;
 
@@ -116,14 +125,17 @@ public final class WorkspaceActivity extends Activity {
         super.onCreate(savedInstanceState);
         Nator.init(this);
         enableImmersiveMode();
-        favorites = new FavoritesStore(this);
-        progress = new WatchProgressStore(this);
-        history = new HistoryStore(this);
         settings = new SettingsStore(this);
+        Tr.setArabic("ar".equals(settings.appLanguage()));
         serverConfig = new ServerConfigStore(this);
         prefs = new WorkspacePrefs(this);
         api = new XtreamApiClient(serverConfig);
         catalog = new Catalog(this, api, new LibraryDiskCache(getCacheDir()));
+        kids = new KidsStore(this);
+        if (kids.autoStart() && kids.hasPin()) {
+            kids.setActive(true);
+        }
+        bindProfile();
         PosterLoader.init(getCacheDir());
 
         root = new FrameLayout(this);
@@ -131,6 +143,7 @@ public final class WorkspaceActivity extends Activity {
         root.setBackgroundColor(Nator.SHELL_BG);
         setContentView(root);
         buildShell();
+        applyKidsChrome();
 
         // Keystore-backed session read stays off the main thread (pitfall 8).
         new Thread(() -> {
@@ -149,6 +162,67 @@ public final class WorkspaceActivity extends Activity {
                 }
             });
         }, "ztv-session-init").start();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        kidsGuard.start();
+    }
+
+    @Override
+    protected void onPause() {
+        kidsGuard.stop();
+        super.onPause();
+    }
+
+    // ─── Kids mode ──────────────────────────────────────────────────────────
+
+    public boolean kidsMode() {
+        return kids.isActive();
+    }
+
+    /** Kids mode keeps its own favorites, history and progress, and filters the catalog. */
+    private void bindProfile() {
+        String profile = kids.isActive() ? "kids" : null;
+        favorites = new FavoritesStore(this, profile);
+        progress = new WatchProgressStore(this, profile);
+        history = new HistoryStore(this, profile);
+        catalog.setKidsPolicy(kids.isActive() ? kids.policy() : null);
+    }
+
+    private void applyKidsChrome() {
+        boolean on = kids.isActive();
+        View sources = railButtons.get(Page.Section.SOURCES);
+        if (sources != null) {
+            sources.setVisibility(on ? View.GONE : View.VISIBLE);
+        }
+        railSettings.setVisibility(on ? View.GONE : View.VISIBLE);
+        railKidsExit.setVisibility(on ? View.VISIBLE : View.GONE);
+        headerAdd.setVisibility(on ? View.GONE : View.VISIBLE);
+        kidsBadge.setVisibility(on ? View.VISIBLE : View.GONE);
+        switcherView.setFocusable(!on);
+        switcherView.setClickable(!on);
+        kidsGuard.check();
+    }
+
+    /** Settings › Kids mode › Start: the parent hands the TV over. */
+    void enterKidsMode() {
+        kids.setActive(true);
+        bindProfile();
+        applyKidsChrome();
+        resetTo(new DashboardPage(this));
+        snack(Tr.t("Kids mode is on", "تم تشغيل وضع الأطفال"));
+    }
+
+    void exitKidsMode() {
+        PinDialog.verify(this, Tr.t("Exit Kids mode", "الخروج من وضع الأطفال"), () -> {
+            kids.setActive(false);
+            bindProfile();
+            applyKidsChrome();
+            resetTo(new DashboardPage(this));
+            snack(Tr.t("Kids mode is off", "تم إيقاف وضع الأطفال"));
+        });
     }
 
     @Override
@@ -315,6 +389,9 @@ public final class WorkspaceActivity extends Activity {
 
     /** Rail link: a fresh root for that section (IPTVnator routerLink). */
     public void openSection(Page.Section section) {
+        if (kids.isActive() && (section == Page.Section.SETTINGS || section == Page.Section.SOURCES)) {
+            return;
+        }
         Page page;
         switch (section) {
             case SOURCES:
@@ -449,6 +526,10 @@ public final class WorkspaceActivity extends Activity {
     }
 
     public void play(XtreamMediaItem item, List<XtreamMediaItem> siblingsOrEpisodes) {
+        kidsGuard.check();
+        if (kidsGuard.locked()) {
+            return;
+        }
         if (!hasSource()) {
             return;
         }
@@ -531,6 +612,11 @@ public final class WorkspaceActivity extends Activity {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        // The Kids lock screen ignores Back and search until a parent unlocks it.
+        if (overlayDismissers.isEmpty() && kidsGuard.locked()
+                && (event.getKeyCode() == KeyEvent.KEYCODE_BACK || event.getKeyCode() == KeyEvent.KEYCODE_SEARCH)) {
+            return true;
+        }
         if (event.getAction() == KeyEvent.ACTION_DOWN && !overlayDismissers.isEmpty()
                 && (event.getKeyCode() == KeyEvent.KEYCODE_BACK || event.getKeyCode() == KeyEvent.KEYCODE_ESCAPE)) {
             dismissTopOverlay();
@@ -702,6 +788,9 @@ public final class WorkspaceActivity extends Activity {
     // ─── Shell construction ─────────────────────────────────────────────────
 
     private void buildShell() {
+        lockLayer = new FrameLayout(this);
+        lockLayer.setVisibility(View.GONE);
+        kidsGuard = new KidsGuard(this, kids, lockLayer);
         LinearLayout shell = Nator.row(this);
         shell.setGravity(Gravity.TOP);
         shell.addView(buildRail(), new LinearLayout.LayoutParams(Nator.px(this, 60), -1));
@@ -734,6 +823,8 @@ public final class WorkspaceActivity extends Activity {
         shell.addView(right, new LinearLayout.LayoutParams(0, -1, 1f));
         root.addView(shell, new FrameLayout.LayoutParams(-1, -1));
 
+        root.addView(lockLayer, new FrameLayout.LayoutParams(-1, -1));
+
         overlayLayer = new FrameLayout(this);
         overlayLayer.setVisibility(View.GONE);
         root.addView(overlayLayer, new FrameLayout.LayoutParams(-1, -1));
@@ -761,6 +852,14 @@ public final class WorkspaceActivity extends Activity {
         FrameLayout settingsHolder = new FrameLayout(this);
         railSettings = railButton(Page.Section.SETTINGS, "settings", "Settings", true);
         settingsHolder.addView(railSettings);
+        FrameLayout exitKids = new FrameLayout(this);
+        exitKids.setContentDescription(Tr.t("Exit Kids mode", "الخروج من وضع الأطفال"));
+        Nator.focusable(exitKids, 14);
+        exitKids.setBackground(Nator.states(new GradientDrawable(), Nator.rounded(this, Nator.HOVER_OVERLAY, 14)));
+        exitKids.addView(Nator.icon(this, "lock", 20, Nator.SELECTION), new FrameLayout.LayoutParams(-1, -1));
+        exitKids.setOnClickListener(v -> exitKidsMode());
+        railKidsExit = exitKids;
+        settingsHolder.addView(exitKids, new FrameLayout.LayoutParams(Nator.px(this, 44), Nator.px(this, 44)));
         rail.addView(settingsHolder, Nator.wrap());
         return rail;
     }
@@ -906,7 +1005,8 @@ public final class WorkspaceActivity extends Activity {
         headerBackSlot.addView(back);
         header.addView(headerBackSlot, Nator.margins(this, Nator.size(this, 40, 40), 0, 0, 12, 0));
 
-        header.addView(buildSwitcher(), Nator.margins(this, Nator.size(this, 260, 44), 0, 0, 12, 0));
+        switcherView = buildSwitcher();
+        header.addView(switcherView, Nator.margins(this, Nator.size(this, 260, 44), 0, 0, 12, 0));
         header.addView(buildSearchField(), Nator.margins(this, Nator.size(this, 586, 38), 0, 0, 8, 0));
         if (voiceSearchAvailable()) {
             header.addView(iconButton("mic", 24, "Voice search", v -> startVoiceSearch()),
@@ -914,9 +1014,18 @@ public final class WorkspaceActivity extends Activity {
         }
         header.addView(iconButton("keyboard", 24, "Open remote shortcuts", v -> showShortcuts()),
                 Nator.margins(this, Nator.size(this, 40, 40), 0, 0, 4, 0));
-        header.addView(iconButton("add", 24, "Add playlist", v -> showAddPlaylist(null)),
-                Nator.size(this, 40, 40));
+        headerAdd = iconButton("add", 24, "Add playlist", v -> showAddPlaylist(null));
+        header.addView(headerAdd, Nator.size(this, 40, 40));
         header.addView(Nator.spacer(this));
+        LinearLayout badge = Nator.row(this);
+        badge.setBackground(Nator.pill(this, Nator.SELECTION_SURFACE));
+        Nator.pad(badge, 10, 0, 12, 0);
+        badge.addView(Nator.icon(this, "child_care", 18, Nator.SELECTION), Nator.margins(this, Nator.size(this, 20, 20), 0, 0, 6, 0));
+        TextView badgeText = Nator.line(this, "", 13, Nator.W600, Nator.SELECTION);
+        badge.addView(badgeText);
+        kidsGuard.bindBadge(badgeText);
+        kidsBadge = badge;
+        header.addView(badge, Nator.size(this, -2, 32));
         return header;
     }
 
@@ -1212,6 +1321,9 @@ public final class WorkspaceActivity extends Activity {
     }
 
     public void showAddPlaylist(XtreamCredentials prefill) {
+        if (kids.isActive()) {
+            return;
+        }
         new AddPlaylistDialog(this, prefill).show();
     }
 

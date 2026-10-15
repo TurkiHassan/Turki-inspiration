@@ -29,6 +29,7 @@ public final class SettingsStore {
     private static final String KEY_AUDIO_DECODER = "audio_decoder";
     private static final String KEY_AUDIO_DELAY_MS = "audio_delay_ms";
     private static final String KEY_VOICE_LANGUAGE = "voice_language";
+    private static final String KEY_APP_LANGUAGE = "app_language";
     private static final String KEY_HIDDEN_SECTIONS_PREFIX = "hidden_sections_";
     private static final String KEY_DETAIL_ORDER = "detail_button_order";
     private static final String KEY_DETAIL_HIDDEN = "detail_hidden_buttons";
@@ -170,6 +171,15 @@ public final class SettingsStore {
     private static String knownVoiceLanguage(String value) {
         return VOICE_DEVICE.equals(value) || VOICE_ARABIC.equals(value) || VOICE_ENGLISH.equals(value)
                 ? value : VOICE_BILINGUAL;
+    }
+
+    /** "ar" or "en" (the default). */
+    public String appLanguage() {
+        return "ar".equals(preferences.getString(KEY_APP_LANGUAGE, "en")) ? "ar" : "en";
+    }
+
+    public void setAppLanguage(String language) {
+        preferences.edit().putString(KEY_APP_LANGUAGE, "ar".equals(language) ? "ar" : "en").apply();
     }
 
     public String audioDecoder() {

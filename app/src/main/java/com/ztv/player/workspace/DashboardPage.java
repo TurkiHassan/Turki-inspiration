@@ -21,6 +21,7 @@ import com.ztv.player.R;
 import com.ztv.player.data.WatchProgressStore;
 import com.ztv.player.data.XtreamContentType;
 import com.ztv.player.data.XtreamMediaItem;
+import com.ztv.player.ui.Tr;
 import com.ztv.player.data.XtreamMediaSection;
 import com.ztv.player.ui.PosterLoader;
 import com.ztv.player.ui.PosterUrls;
@@ -127,7 +128,10 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
     public void onShown() {
         if (withSource) {
             host.catalog.addListener(this);
-            for (XtreamContentType type : new XtreamContentType[]{XtreamContentType.MOVIE, XtreamContentType.SERIES}) {
+            XtreamContentType[] types = host.kidsMode()
+                    ? new XtreamContentType[]{XtreamContentType.LIVE, XtreamContentType.MOVIE, XtreamContentType.SERIES}
+                    : new XtreamContentType[]{XtreamContentType.MOVIE, XtreamContentType.SERIES};
+            for (XtreamContentType type : types) {
                 if (!host.catalog.isLoaded(type)) {
                     host.catalog.load(type, false, this);
                 }
@@ -156,11 +160,14 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
 
     @Override
     public void onLibrary(XtreamContentType type, List<XtreamMediaSection> sections, boolean fromNetwork) {
-        if (railsColumn == null || (type != XtreamContentType.MOVIE && type != XtreamContentType.SERIES)) {
+        if (railsColumn == null || (type == XtreamContentType.LIVE && !host.kidsMode())) {
             return;
         }
         if (!railsColumn.hasFocus()) {
             rebuild();
+            return;
+        }
+        if (host.kidsMode()) {
             return;
         }
         // The viewer is in a rail: refresh the hero and add late rails without touching focus.
@@ -447,16 +454,41 @@ public final class DashboardPage extends Page implements Catalog.LibraryListener
         if (host.prefs.bool(SettingsPage.PREF_RAIL_FAVORITE_VOD, true) && !favoriteVod.isEmpty()) {
             addRail("Favorite movies & series", cards(favoriteVod), false, () -> host.openSection(Section.FAVORITES));
         }
-        if (host.prefs.bool(SettingsPage.PREF_RAIL_SOURCES, true)) {
-            addSourcesRail();
+        if (host.kidsMode()) {
+            addKidsRails();
+        } else {
+            if (host.prefs.bool(SettingsPage.PREF_RAIL_SOURCES, true)) {
+                addSourcesRail();
+            }
+            addRecentlyAddedRail();
         }
-        addRecentlyAddedRail();
         if (hadFocus && firstFocus != null) {
             firstFocus.requestFocus();
         }
     }
 
     private static final String RECENTLY_ADDED_TAG = "rail-recently-added";
+    private static final int KIDS_RAIL_SIZE = 30;
+
+    /** Kids mode home: what the parent allowed, so the first screen is never empty. */
+    private void addKidsRails() {
+        List<XtreamMediaItem> channels = Catalog.allItems(host.catalog.cached(XtreamContentType.LIVE));
+        if (!channels.isEmpty()) {
+            addRail(Tr.t("Your channels", "قنواتك"), cards(first(channels)), true, () -> host.openSection(Section.LIVE));
+        }
+        List<XtreamMediaItem> movies = Catalog.latest(Catalog.allItems(host.catalog.cached(XtreamContentType.MOVIE)), KIDS_RAIL_SIZE);
+        if (!movies.isEmpty()) {
+            addRail(Tr.t("Your movies", "أفلامك"), cards(movies), false, () -> host.openSection(Section.VOD));
+        }
+        List<XtreamMediaItem> series = Catalog.latest(Catalog.allItems(host.catalog.cached(XtreamContentType.SERIES)), KIDS_RAIL_SIZE);
+        if (!series.isEmpty()) {
+            addRail(Tr.t("Your series", "مسلسلاتك"), cards(series), false, () -> host.openSection(Section.SERIES));
+        }
+    }
+
+    private static List<XtreamMediaItem> first(List<XtreamMediaItem> items) {
+        return items.size() > KIDS_RAIL_SIZE ? new ArrayList<>(items.subList(0, KIDS_RAIL_SIZE)) : items;
+    }
 
     private void addRecentlyAddedRail() {
         List<XtreamMediaItem> latest = new ArrayList<>(Catalog.latest(Catalog.allItems(host.catalog.cached(XtreamContentType.MOVIE)), 12));

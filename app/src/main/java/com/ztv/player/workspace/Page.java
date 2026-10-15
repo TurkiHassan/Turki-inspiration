@@ -103,6 +103,11 @@ public abstract class Page {
     public void onPlaybackStarting() {
     }
 
+    /** True while a preview is playing on the page (counts toward Kids mode watch time). */
+    public boolean playingMedia() {
+        return false;
+    }
+
     /** Called when the workspace is no longer visible. Release any audible media resources. */
     public void onHostStopped() {
     }

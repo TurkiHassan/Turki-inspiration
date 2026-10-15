@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -14,9 +15,12 @@ import android.widget.TextView;
 import com.ztv.player.AudioDelayPolicy;
 import com.ztv.player.BuildConfig;
 import com.ztv.player.data.BackupManager;
+import com.ztv.player.data.KidsPolicy;
+import com.ztv.player.data.KidsStore;
 import com.ztv.player.data.ServerAddressPolicy;
 import com.ztv.player.data.SettingsStore;
 import com.ztv.player.data.XtreamContentType;
+import com.ztv.player.ui.Tr;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -45,9 +49,10 @@ public final class SettingsPage extends Page {
     static final int REQUEST_EXPORT = 701;
     static final int REQUEST_IMPORT = 702;
 
-    private static final String[][] NAV = {
+    private final String[][] NAV = {
             {"APP", null, null},
             {"general", "General", "tune"},
+            {"kids", Tr.t("Kids mode", "وضع الأطفال"), "child_care"},
             {"playback", "Playback", "play_circle"},
             {"dashboard", "Dashboard", "dashboard"},
             {"LIBRARY", null, null},
@@ -58,6 +63,7 @@ public final class SettingsPage extends Page {
 
     private final Context context;
     private String sectionKey = "general";
+    private boolean kidsUnlocked;
     private LinearLayout nav;
     private FrameLayout body;
     private View firstControl;
@@ -84,6 +90,7 @@ public final class SettingsPage extends Page {
 
     private static final String[][] SEARCH_INDEX = {
             {"general", "general appearance cover size titles covers startup start language theme"},
+            {"kids", "kids children child parental parent pin lock bedtime limit time أطفال الأطفال"},
             {"playback", "playback player auto-play autoplay next episode recently viewed history size"},
             {"dashboard", "dashboard rails continue watching favorites recently added sources live"},
             {"categories", "categories category hide hidden manage library"},
@@ -104,6 +111,14 @@ public final class SettingsPage extends Page {
                 renderSection();
                 return;
             }
+        }
+    }
+
+    @Override
+    public void onShown() {
+        // Coming back from the Kids content picker: refresh its summary.
+        if ("kids".equals(sectionKey) && body != null) {
+            renderSection();
         }
     }
 
@@ -171,6 +186,15 @@ public final class SettingsPage extends Page {
             sectionKey = key;
             restyleNav();
             renderSection();
+        });
+        // → goes to the open section's first control rather than the nearest view.
+        item.setOnKeyListener((v, keyCode, event) -> {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_DPAD_RIGHT
+                    && firstControl != null && firstControl.isShown()) {
+                firstControl.requestFocus();
+                return true;
+            }
+            return false;
         });
         item.setTag(R_STYLE, style);
         style.run();
@@ -272,6 +296,9 @@ public final class SettingsPage extends Page {
                 });
                 actionRow(data, "Sign out", "Remove the Xtream account from this device.", "Sign out", () -> host.openSection(Section.SOURCES));
                 break;
+            case "kids":
+                renderKids(page);
+                break;
             case "about":
                 heading(page, "About", "ZTV for Android TV.");
                 LinearLayout about = card(page, "Application");
@@ -321,6 +348,136 @@ public final class SettingsPage extends Page {
                 break;
         }
         body.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
+    }
+
+    // ─── Kids mode ──────────────────────────────────────────────────────────
+
+    private static final int[] LIMIT_MINUTES = {KidsPolicy.UNLIMITED, 60, 120, 180, 240};
+    private static final int[] BEDTIME_STARTS = {19 * 60, 20 * 60, 21 * 60, 22 * 60};
+    private static final int[] BEDTIME_ENDS = {6 * 60, 7 * 60, 8 * 60};
+
+    private void renderKids(LinearLayout page) {
+        KidsStore kids = host.kids;
+        heading(page, Tr.t("Kids mode", "وضع الأطفال"), Tr.t(
+                "Hand the TV to your children: they see only the channels, movies and series you allow, within the time you set.",
+                "سلّم التلفاز لأطفالك: يرون فقط القنوات والأفلام والمسلسلات التي تسمح بها، وفي الوقت الذي تحدده."));
+        if (!kids.hasPin()) {
+            LinearLayout setup = card(page, Tr.t("Get started", "البداية"));
+            actionRow(setup, Tr.t("Create a parent PIN", "أنشئ رمز الوالدين"),
+                    Tr.t("The PIN protects Kids mode settings and is needed to leave Kids mode.",
+                            "الرمز يحمي إعدادات وضع الأطفال، ويُطلب للخروج من وضع الأطفال."),
+                    Tr.t("Create PIN", "إنشاء الرمز"), () -> PinDialog.create(host, () -> {
+                        kidsUnlocked = true;
+                        renderSectionAndFocus();
+                    }));
+            return;
+        }
+        if (!kidsUnlocked) {
+            LinearLayout locked = card(page, Tr.t("Locked", "مقفل"));
+            actionRow(locked, Tr.t("Enter the parent PIN", "أدخل رمز الوالدين"),
+                    Tr.t("Kids mode settings are protected.", "إعدادات وضع الأطفال محمية."),
+                    Tr.t("Unlock", "فتح"), () -> PinDialog.verify(host, Tr.t("Parent PIN", "رمز الوالدين"), () -> {
+                        kidsUnlocked = true;
+                        renderSectionAndFocus();
+                    }));
+            return;
+        }
+        KidsPolicy policy = kids.policy();
+        LinearLayout mode = card(page, Tr.t("Mode", "الوضع"));
+        actionRow(mode, Tr.t("Start Kids mode now", "شغّل وضع الأطفال الآن"),
+                Tr.t("Settings, sources and adding playlists are hidden until the PIN is entered.",
+                        "تُخفى الإعدادات والمصادر وإضافة الاشتراكات حتى يُدخل الرمز."),
+                Tr.t("Start", "تشغيل"), host::enterKidsMode);
+        toggleRow(mode, Tr.t("Always start in Kids mode", "افتح دائمًا على وضع الأطفال"),
+                Tr.t("Turning the TV on opens ZTV in Kids mode.", "عند تشغيل التطبيق يفتح على وضع الأطفال."),
+                kids.autoStart(), kids::setAutoStart);
+
+        LinearLayout content = card(page, Tr.t("Allowed content", "المحتوى المسموح"));
+        actionRow(content, Tr.t("Choose channels, movies and series", "اختر القنوات والأفلام والمسلسلات"),
+                kidsSummary(policy), Tr.t("Choose", "اختيار"), () -> host.push(new KidsContentPage(host)));
+
+        LinearLayout limits = card(page, Tr.t("Time", "الوقت"));
+        String[] limitLabels = new String[LIMIT_MINUTES.length];
+        String[] limitIcons = new String[LIMIT_MINUTES.length];
+        String currentLimit = null;
+        for (int i = 0; i < LIMIT_MINUTES.length; i++) {
+            limitLabels[i] = LIMIT_MINUTES[i] == KidsPolicy.UNLIMITED ? Tr.t("Off", "بلا حد")
+                    : Tr.t((LIMIT_MINUTES[i] / 60) + " h", (LIMIT_MINUTES[i] / 60) + " س");
+            limitIcons[i] = "timer";
+            if (LIMIT_MINUTES[i] == policy.dailyMinutes()) {
+                currentLimit = limitLabels[i];
+            }
+        }
+        segmentedRow(limits, Tr.t("Daily limit", "الحد اليومي"),
+                Tr.t("Watching stops when the time is used up and starts again tomorrow.",
+                        "تتوقف المشاهدة عند انتهاء الوقت، وتعود في اليوم التالي."),
+                limitLabels, limitIcons, currentLimit == null ? limitLabels[0] : currentLimit,
+                value -> kids.setDailyMinutes(LIMIT_MINUTES[indexOf(limitLabels, value)]));
+        toggleRow(limits, Tr.t("Bedtime", "وقت النوم"),
+                Tr.t("No watching between the hours below.", "لا مشاهدة بين الساعتين أدناه."),
+                policy.bedtimeEnabled(), value -> kids.setBedtime(value, kids.policy().bedtimeStart(), kids.policy().bedtimeEnd()));
+        String[] starts = clockLabels(BEDTIME_STARTS);
+        segmentedRow(limits, Tr.t("Bedtime starts", "يبدأ وقت النوم"), null, starts, repeat("bedtime", starts.length),
+                clockLabel(policy.bedtimeStart()), value -> kids.setBedtime(kids.policy().bedtimeEnabled(),
+                        BEDTIME_STARTS[indexOf(starts, value)], kids.policy().bedtimeEnd()));
+        String[] ends = clockLabels(BEDTIME_ENDS);
+        segmentedRow(limits, Tr.t("Bedtime ends", "ينتهي وقت النوم"), null, ends, repeat("wb_sunny", ends.length),
+                clockLabel(policy.bedtimeEnd()), value -> kids.setBedtime(kids.policy().bedtimeEnabled(),
+                        kids.policy().bedtimeStart(), BEDTIME_ENDS[indexOf(ends, value)]));
+
+        LinearLayout pin = card(page, Tr.t("Parent PIN", "رمز الوالدين"));
+        actionRow(pin, Tr.t("Change PIN", "تغيير الرمز"), null, Tr.t("Change", "تغيير"),
+                () -> PinDialog.create(host, () -> host.snack(Tr.t("PIN changed", "تم تغيير الرمز"))));
+    }
+
+    private void renderSectionAndFocus() {
+        renderSection();
+        body.post(() -> {
+            if (firstControl != null) {
+                firstControl.requestFocus();
+            }
+        });
+    }
+
+    private String kidsSummary(KidsPolicy policy) {
+        int categories = policy.categories().size();
+        int items = policy.allowedItems().size();
+        if (categories == 0 && items == 0) {
+            return Tr.t("Nothing is allowed yet: Kids mode would show an empty library.",
+                    "لا شيء مسموح بعد: سيظهر وضع الأطفال بلا محتوى.");
+        }
+        return Tr.t("Allowed: " + Nator.plural(categories, "category", "categories")
+                        + " and " + Nator.plural(items, "single item", "single items"),
+                "مسموح: " + categories + " فئة، و" + items + " عنصر منفرد");
+    }
+
+    private static String[] clockLabels(int[] minutes) {
+        String[] labels = new String[minutes.length];
+        for (int i = 0; i < minutes.length; i++) {
+            labels[i] = clockLabel(minutes[i]);
+        }
+        return labels;
+    }
+
+    private static String clockLabel(int minuteOfDay) {
+        int hour = minuteOfDay / 60;
+        int twelve = hour % 12 == 0 ? 12 : hour % 12;
+        return Tr.t(twelve + (hour < 12 ? " AM" : " PM"), twelve + (hour < 12 ? " ص" : " م"));
+    }
+
+    private static String[] repeat(String value, int count) {
+        String[] out = new String[count];
+        Arrays.fill(out, value);
+        return out;
+    }
+
+    private static int indexOf(String[] values, String value) {
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].equals(value)) {
+                return i;
+            }
+        }
+        return 0;
     }
 
     private static String capitalize(String value) {

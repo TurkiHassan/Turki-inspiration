@@ -413,12 +413,15 @@ public final class DetailPage extends Page {
 
     private void showMore(View anchor) {
         LinearLayout menu = host.menuPanel();
-        host.menuItem(menu, "Open in external player", "open_in_new", false, () -> {
-            XtreamMediaItem target = item.type() == XtreamContentType.SERIES ? resumeEpisode() : item;
-            if (target != null) {
-                openExternally(target);
-            }
-        });
+        if (!host.kidsMode()) {
+            // Another player would escape Kids mode's watch-time limit.
+            host.menuItem(menu, "Open in external player", "open_in_new", false, () -> {
+                XtreamMediaItem target = item.type() == XtreamContentType.SERIES ? resumeEpisode() : item;
+                if (target != null) {
+                    openExternally(target);
+                }
+            });
+        }
         host.menuItem(menu, host.favorites.isFavorite(item.type(), item.id()) ? "Remove from favorites" : "Add to favorites",
                 "favorite_border", false, this::toggleFavorite);
         host.menuItem(menu, "Remove from recently viewed", "history", false, () -> {
