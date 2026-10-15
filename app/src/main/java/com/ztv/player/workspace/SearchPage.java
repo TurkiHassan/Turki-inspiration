@@ -15,9 +15,9 @@ import com.ztv.player.data.XtreamMediaItem;
 import com.ztv.player.data.XtreamMediaSection;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,10 +27,15 @@ import java.util.Set;
  */
 public final class SearchPage extends Page implements Catalog.LibraryListener {
     private static final int MAX_RESULTS = 300;
+    private static final int MIN_TYPED = 3;
+    private static final int MIN_SPOKEN = 2;
     private final Context context;
     private final Map<XtreamContentType, Boolean> enabled = new EnumMap<>(XtreamContentType.class);
     private boolean visibleOnly;
     private String query = "";
+    private boolean spoken;
+    private final List<String> heard = new ArrayList<>();
+    private LinearLayout heardRow;
     private VerticalGridView grid;
     private PosterGridAdapter adapter;
     private View empty;
@@ -48,6 +53,65 @@ public final class SearchPage extends Page implements Catalog.LibraryListener {
 
     void presetQuery(String value) {
         query = value;
+    }
+
+    /**
+     * Recognition alternatives, best guess first. Searches the one that matches the catalog
+     * best and offers the others as "Also heard" chips. Returns the phrase it searched.
+     */
+    String applySpoken(List<String> alternatives) {
+        heard.clear();
+        for (String alternative : alternatives) {
+            String value = alternative == null ? "" : alternative.trim();
+            boolean duplicate = false;
+            for (String existing : heard) {
+                duplicate |= SearchMatcher.fold(existing).equals(SearchMatcher.fold(value));
+            }
+            if (SearchMatcher.of(value).length() >= MIN_SPOKEN && !duplicate) {
+                heard.add(value);
+            }
+        }
+        query = pickSpoken(heard);
+        spoken = true;
+        render();
+        return query;
+    }
+
+    /** Lowest (best) match rank wins; ties keep the recognizer's own order. */
+    private String pickSpoken(List<String> candidates) {
+        String best = candidates.isEmpty() ? "" : candidates.get(0);
+        int bestScore = Integer.MAX_VALUE;
+        List<XtreamMediaItem> items = scopedItems();
+        for (String candidate : candidates) {
+            SearchMatcher matcher = SearchMatcher.of(candidate);
+            int score = Integer.MAX_VALUE;
+            for (XtreamMediaItem item : items) {
+                int itemScore = matcher.score(item.title());
+                if (itemScore != SearchMatcher.NO_MATCH && itemScore < score) {
+                    score = itemScore;
+                    if (score == 0) {
+                        break;
+                    }
+                }
+            }
+            if (score < bestScore) {
+                bestScore = score;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    private void chooseHeard(String value) {
+        query = value;
+        spoken = true;
+        host.showSearchText(value);
+        render();
+        if (adapter.getItemCount() > 0) {
+            grid.requestFocus();
+        } else if (heardRow.getChildCount() > 1) {
+            heardRow.getChildAt(1).requestFocus();
+        }
     }
 
     @Override
@@ -73,6 +137,8 @@ public final class SearchPage extends Page implements Catalog.LibraryListener {
     @Override
     public void onSearch(String value) {
         query = value == null ? "" : value.trim();
+        spoken = false;
+        heard.clear();
         render();
     }
 
@@ -127,6 +193,10 @@ public final class SearchPage extends Page implements Catalog.LibraryListener {
         header.addView(Nator.spacer(context));
         header.addView(checkbox("Visible categories only", null));
         column.addView(header, new LinearLayout.LayoutParams(-1, Nator.px(context, 72)));
+        heardRow = Nator.row(context);
+        Nator.pad(heardRow, 20, 0, 20, 12);
+        heardRow.setVisibility(View.GONE);
+        column.addView(heardRow, new LinearLayout.LayoutParams(-1, -2));
 
         FrameLayout body = new FrameLayout(context);
         body.setClipChildren(false);
@@ -149,7 +219,7 @@ public final class SearchPage extends Page implements Catalog.LibraryListener {
         Widgets.enablePartialRowDown(grid, columns);
         body.addView(grid, new FrameLayout.LayoutParams(-1, -1));
         LinearLayout emptyBox = Widgets.emptyState(context, "search", "Search for content",
-                "Enter at least 3 characters to search across live TV, movies and series.");
+                emptyHint());
         emptyTitle = (TextView) emptyBox.getChildAt(1);
         emptyBody = (TextView) emptyBox.getChildAt(2);
         empty = emptyBox;
@@ -187,20 +257,95 @@ public final class SearchPage extends Page implements Catalog.LibraryListener {
         return row;
     }
 
+    private String emptyHint() {
+        return host.voiceSearchAvailable()
+                ? "Type at least 3 characters, or press the mic and say a channel, movie or series."
+                : "Enter at least 3 characters to search across live TV, movies and series.";
+    }
+
+    private void renderHeard() {
+        heardRow.removeAllViews();
+        List<String> others = new ArrayList<>();
+        for (String alternative : heard) {
+            if (spoken && !alternative.equals(query) && others.size() < 4
+                    && !search(SearchMatcher.of(alternative), 1).isEmpty()) {
+                others.add(alternative);
+            }
+        }
+        if (others.isEmpty()) {
+            heardRow.setVisibility(View.GONE);
+            return;
+        }
+        heardRow.addView(Nator.text(context, "Also heard", 13, Nator.W500, Nator.BODY), Nator.margins(context, Nator.wrap(), 0, 0, 14, 0));
+        for (String alternative : others) {
+            TextView chip = Nator.text(context, alternative, 13.5f, Nator.W500, Nator.ON_SURFACE);
+            chip.setGravity(Gravity.CENTER);
+            Nator.pad(chip, 14, 0, 14, 0);
+            Nator.focusable(chip, 999);
+            chip.setBackground(Nator.states(Nator.roundedStroke(context, Nator.CHIP_BG, 999, 1, Nator.OUTLINE_VARIANT),
+                    Nator.roundedStroke(context, Nator.SELECTION_SURFACE, 999, 1, Nator.SELECTION_BORDER)));
+            chip.setOnClickListener(v -> chooseHeard(alternative));
+            heardRow.addView(chip, Nator.margins(context, Nator.size(context, -2, 32), 0, 0, 10, 0));
+        }
+        heardRow.setVisibility(View.VISIBLE);
+    }
+
     private void render() {
         if (adapter == null) {
             return;
         }
-        if (query.length() < 3) {
+        renderHeard();
+        SearchMatcher matcher = SearchMatcher.of(query);
+        if (matcher.length() < (spoken ? MIN_SPOKEN : MIN_TYPED)) {
             adapter.setItems(new ArrayList<>());
             resultCount.setVisibility(View.GONE);
             emptyTitle.setText("Search for content");
-            emptyBody.setText("Enter at least 3 characters to search across live TV, movies and series.");
+            emptyBody.setText(emptyHint());
             empty.setVisibility(View.VISIBLE);
             return;
         }
-        String needle = query.toLowerCase(Locale.ROOT);
-        List<XtreamMediaItem> results = new ArrayList<>();
+        List<XtreamMediaItem> results = search(matcher, MAX_RESULTS);
+        adapter.setItems(results);
+        resultCount.setText(Nator.plural(results.size(), "result", "results"));
+        resultCount.setVisibility(View.VISIBLE);
+        if (results.isEmpty()) {
+            emptyTitle.setText("No results");
+            emptyBody.setText("Nothing matches \"" + query + "\". Try another title or enable more types.");
+            empty.setVisibility(View.VISIBLE);
+        } else {
+            empty.setVisibility(View.GONE);
+        }
+    }
+
+    /** Best-ranked matches across the enabled types; ties keep the catalog order. */
+    private List<XtreamMediaItem> search(SearchMatcher matcher, int limit) {
+        List<XtreamMediaItem> matches = new ArrayList<>();
+        List<Integer> scores = new ArrayList<>();
+        for (XtreamMediaItem item : scopedItems()) {
+            int score = matcher.score(item.title());
+            if (score != SearchMatcher.NO_MATCH) {
+                matches.add(item);
+                scores.add(score);
+                if (limit == 1) {
+                    return matches;
+                }
+            }
+        }
+        List<Integer> order = new ArrayList<>();
+        for (int i = 0; i < matches.size(); i++) {
+            order.add(i);
+        }
+        Collections.sort(order, (a, b) -> Integer.compare(scores.get(a), scores.get(b)));
+        List<XtreamMediaItem> ranked = new ArrayList<>(Math.min(limit, matches.size()));
+        for (int i = 0; i < order.size() && ranked.size() < limit; i++) {
+            ranked.add(matches.get(order.get(i)));
+        }
+        return ranked;
+    }
+
+    /** Every item of the enabled types, minus hidden categories when "Visible only" is on. */
+    private List<XtreamMediaItem> scopedItems() {
+        List<XtreamMediaItem> items = new ArrayList<>();
         for (XtreamContentType type : new XtreamContentType[]{XtreamContentType.LIVE, XtreamContentType.MOVIE, XtreamContentType.SERIES}) {
             if (!Boolean.TRUE.equals(enabled.get(type))) {
                 continue;
@@ -216,24 +361,8 @@ public final class SearchPage extends Page implements Catalog.LibraryListener {
                     scoped.add(section);
                 }
             }
-            for (XtreamMediaItem item : Catalog.allItems(scoped)) {
-                if (item.title().toLowerCase(Locale.ROOT).contains(needle)) {
-                    results.add(item);
-                    if (results.size() >= MAX_RESULTS) {
-                        break;
-                    }
-                }
-            }
+            items.addAll(Catalog.allItems(scoped));
         }
-        adapter.setItems(results);
-        resultCount.setText(Nator.plural(results.size(), "result", "results"));
-        resultCount.setVisibility(View.VISIBLE);
-        if (results.isEmpty()) {
-            emptyTitle.setText("No results");
-            emptyBody.setText("Nothing matches \"" + query + "\". Try another title or enable more types.");
-            empty.setVisibility(View.VISIBLE);
-        } else {
-            empty.setVisibility(View.GONE);
-        }
+        return items;
     }
 }

@@ -10,6 +10,12 @@ with the Xtream Codes server address, username and password from their own provi
 
 - Xtream Codes API (`player_api.php`) sign-in with a user-entered server address
 - Live TV, movies and series with categories, search and "recently added"
+- Voice search from the header mic or the remote's search key: say a channel, movie or series
+  in Arabic or English. On Android 13+ "Auto" records once and transcribes in both languages,
+  then keeps the reading that matches the playlist best; other readings appear as "Also heard"
+- Search that tolerates spelling: Arabic letter variants and diacritics, Arabic-Indic digits,
+  words in any order, number words ("MBC one", "روتانا واحد"), and Arabic spellings of Latin
+  channel names ("ام بي سي اكشن" finds "MBC-Action-HD", "الجزيرة" finds "Al Jazeera")
 - Dashboard, favorites, watch history and resume ("continue watching")
 - Short EPG (now / next) on live channels
 - Playback through AndroidX Media3 (ExoPlayer) with auto-reconnect and tuned live/VOD buffering

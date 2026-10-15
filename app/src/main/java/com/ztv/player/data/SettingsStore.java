@@ -28,6 +28,7 @@ public final class SettingsStore {
     private static final String KEY_LIVE_BUFFER = "live_buffer";
     private static final String KEY_AUDIO_DECODER = "audio_decoder";
     private static final String KEY_AUDIO_DELAY_MS = "audio_delay_ms";
+    private static final String KEY_VOICE_LANGUAGE = "voice_language";
     private static final String KEY_HIDDEN_SECTIONS_PREFIX = "hidden_sections_";
     private static final String KEY_DETAIL_ORDER = "detail_button_order";
     private static final String KEY_DETAIL_HIDDEN = "detail_hidden_buttons";
@@ -39,6 +40,10 @@ public final class SettingsStore {
     public static final String LIVE_BUFFER_LARGE = "Large";
     public static final String AUDIO_DECODER_DEVICE = "Device";
     public static final String AUDIO_DECODER_FFMPEG = "FFmpeg";
+    public static final String VOICE_DEVICE = "device";
+    public static final String VOICE_ARABIC = "ar-SA";
+    public static final String VOICE_ENGLISH = "en-US";
+    public static final String VOICE_BILINGUAL = "ar-SA+en-US";
     public static final String BUTTON_PLAY = "PLAY";
     public static final String BUTTON_FAVORITE = "FAVORITE";
     public static final String BUTTON_EXTERNAL = "EXTERNAL";
@@ -151,6 +156,20 @@ public final class SettingsStore {
     public void setLiveBuffer(String size) {
         preferences.edit().putString(KEY_LIVE_BUFFER,
                 LIVE_BUFFER_LARGE.equals(size) ? LIVE_BUFFER_LARGE : LIVE_BUFFER_NORMAL).apply();
+    }
+
+    /** Arabic and English together (the default), one of them, or the TV's own language. */
+    public String voiceLanguage() {
+        return knownVoiceLanguage(preferences.getString(KEY_VOICE_LANGUAGE, VOICE_BILINGUAL));
+    }
+
+    public void setVoiceLanguage(String language) {
+        preferences.edit().putString(KEY_VOICE_LANGUAGE, knownVoiceLanguage(language)).apply();
+    }
+
+    private static String knownVoiceLanguage(String value) {
+        return VOICE_DEVICE.equals(value) || VOICE_ARABIC.equals(value) || VOICE_ENGLISH.equals(value)
+                ? value : VOICE_BILINGUAL;
     }
 
     public String audioDecoder() {

@@ -1,15 +1,22 @@
 package com.ztv.player.workspace;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Outline;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -65,6 +72,7 @@ public final class WorkspaceActivity extends Activity {
     private static final String PREF_TITLE = "playlist_title";
     private static final String PREF_LAST_SECTION = "last_section";
     private static final int MAX_QUEUED_EPISODES = 40;
+    static final int REQUEST_VOICE = 703;
 
     // Stores & services (shared with every page).
     XtreamApiClient api;
@@ -91,6 +99,8 @@ public final class WorkspaceActivity extends Activity {
     private LinearLayout searchField;
     private TextView searchChip;
     private EditText searchInput;
+    private ComponentName voiceRecognizer;
+    private boolean voiceResolved;
     private FrameLayout contextFrame;
     private FrameLayout contentFrame;
     private FrameLayout overlayLayer;
@@ -165,6 +175,14 @@ public final class WorkspaceActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_VOICE) {
+            List<String> heard = resultCode == RESULT_OK && data != null
+                    ? data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS) : null;
+            if (heard != null && !heard.isEmpty()) {
+                applyVoiceSearch(heard);
+            }
+            return;
+        }
         Page page = top();
         if (resultCode == RESULT_OK && data != null && data.getData() != null && page instanceof SettingsPage) {
             ((SettingsPage) page).onDocument(requestCode, data.getData());
@@ -522,11 +540,123 @@ public final class WorkspaceActivity extends Activity {
                 && (event.getKeyCode() == KeyEvent.KEYCODE_BACK || event.getKeyCode() == KeyEvent.KEYCODE_ESCAPE)) {
             return true;
         }
+        if (event.getKeyCode() == KeyEvent.KEYCODE_SEARCH && overlayDismissers.isEmpty()) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+                startVoiceSearch();
+            }
+            return true;
+        }
         Page page = top();
         if (overlayDismissers.isEmpty() && page != null && page.onKey(event)) {
             return true;
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public boolean onSearchRequested() {
+        startVoiceSearch();
+        return true;
+    }
+
+    // ─── Voice search ───────────────────────────────────────────────────────
+
+    public boolean voiceSearchAvailable() {
+        if (!voiceResolved) {
+            voiceResolved = true;
+            voiceRecognizer = pickRecognizer(getPackageManager().queryIntentActivities(
+                    new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0));
+        }
+        return SpeechRecognizer.isRecognitionAvailable(this) || voiceRecognizer != null;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_VOICE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startVoiceSearch();
+            } else {
+                snack("Allow the microphone to search by voice");
+            }
+        }
+    }
+
+    /** Google TV's own mic overlay when present, so the TV never shows an app chooser. */
+    private static ComponentName pickRecognizer(List<ResolveInfo> candidates) {
+        String[] preferred = {"com.google.android.katniss", "com.google.android.googlequicksearchbox"};
+        for (String packageName : preferred) {
+            for (ResolveInfo info : candidates) {
+                if (packageName.equals(info.activityInfo.packageName)) {
+                    return new ComponentName(info.activityInfo.packageName, info.activityInfo.name);
+                }
+            }
+        }
+        if (candidates.isEmpty()) {
+            return null;
+        }
+        ResolveInfo first = candidates.get(0);
+        return new ComponentName(first.activityInfo.packageName, first.activityInfo.name);
+    }
+
+    /**
+     * Listens through the system speech service in ZTV's own card; devices without one fall
+     * back to whatever app answers the recognize-speech intent.
+     */
+    public void startVoiceSearch() {
+        if (!hasSource()) {
+            snack("Add a playlist to search");
+            return;
+        }
+        if (!voiceSearchAvailable()) {
+            snack("Voice search isn't available on this device");
+            return;
+        }
+        if (SpeechRecognizer.isRecognitionAvailable(this)) {
+            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_VOICE);
+                return;
+            }
+            new VoiceSearchDialog(this, settings.voiceLanguage(), this::applyVoiceSearch).show();
+            return;
+        }
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.setComponent(voiceRecognizer);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH);
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Say a channel, movie or series");
+        intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
+        VoiceSearchDialog.putLanguage(intent, settings.voiceLanguage());
+        try {
+            startActivityForResult(intent, REQUEST_VOICE);
+        } catch (ActivityNotFoundException | SecurityException e) {
+            voiceRecognizer = null;
+            snack("Voice search isn't available on this device");
+        }
+    }
+
+    private void applyVoiceSearch(List<String> heard) {
+        Page current = top();
+        SearchPage page = current instanceof SearchPage ? (SearchPage) current : new SearchPage(this);
+        String query = page.applySpoken(heard);
+        if (query.isEmpty()) {
+            return;
+        }
+        if (page == current) {
+            showSearchText(query);
+            page.requestInitialFocus();
+        } else {
+            push(page);
+        }
+    }
+
+    /** Puts {@code text} in the header search field without re-running the page search. */
+    public void showSearchText(String text) {
+        if (pendingSearch != null) {
+            ui.removeCallbacks(pendingSearch);
+        }
+        suppressSearchEvents = true;
+        searchInput.setText(text);
+        suppressSearchEvents = false;
     }
 
     @Override
@@ -778,6 +908,10 @@ public final class WorkspaceActivity extends Activity {
 
         header.addView(buildSwitcher(), Nator.margins(this, Nator.size(this, 260, 44), 0, 0, 12, 0));
         header.addView(buildSearchField(), Nator.margins(this, Nator.size(this, 586, 38), 0, 0, 8, 0));
+        if (voiceSearchAvailable()) {
+            header.addView(iconButton("mic", 24, "Voice search", v -> startVoiceSearch()),
+                    Nator.margins(this, Nator.size(this, 40, 40), 0, 0, 4, 0));
+        }
         header.addView(iconButton("keyboard", 24, "Open remote shortcuts", v -> showShortcuts()),
                 Nator.margins(this, Nator.size(this, 40, 40), 0, 0, 4, 0));
         header.addView(iconButton("add", 24, "Add playlist", v -> showAddPlaylist(null)),
@@ -1096,6 +1230,7 @@ public final class WorkspaceActivity extends Activity {
                 {"◀ ▶ ▲ ▼", "Move between rail, categories and content"},
                 {"CH+ / CH−", "Next / previous channel while playing"},
                 {"Menu", "Toggle favorite on the focused item"},
+                {"Mic / Search", "Voice search: say a channel, movie or series"},
         };
         for (String[] row : rows) {
             LinearLayout line = Nator.row(this);

@@ -297,6 +297,27 @@ public final class SettingsPage extends Page {
                         new String[]{"Dashboard", "Last view"}, new String[]{"dashboard", "restore"},
                         host.settings.startupHome() ? "Dashboard" : "Last view",
                         value -> host.settings.setStartupHome("Dashboard".equals(value)));
+                if (host.voiceSearchAvailable()) {
+                    LinearLayout voice = card(page, "Voice search");
+                    String[] languages = {"Auto", "Arabic", "English", "TV language"};
+                    String[] tags = {SettingsStore.VOICE_BILINGUAL, SettingsStore.VOICE_ARABIC, SettingsStore.VOICE_ENGLISH, SettingsStore.VOICE_DEVICE};
+                    String current = languages[0];
+                    for (int i = 0; i < tags.length; i++) {
+                        if (tags[i].equals(host.settings.voiceLanguage())) {
+                            current = languages[i];
+                        }
+                    }
+                    segmentedRow(voice, "Voice language",
+                            "Auto hears you once and searches what you said in both Arabic and English. Pick one language to make it a little faster.",
+                            languages, new String[]{"translate", "translate", "translate", "tv"}, current,
+                            value -> {
+                                for (int i = 0; i < languages.length; i++) {
+                                    if (languages[i].equals(value)) {
+                                        host.settings.setVoiceLanguage(tags[i]);
+                                    }
+                                }
+                            });
+                }
                 break;
         }
         body.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
